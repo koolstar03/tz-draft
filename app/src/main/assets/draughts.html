@@ -569,13 +569,14 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <div id="config-screen" class="screen">
     <h2 class="main-title" style="font-size:1.8rem;">New Game</h2>
       <div class="glass" style="width:min(420px,92vw); padding:22px; display:flex; flex-direction:column; gap:14px;">
-        <div style="font-size:.75rem; opacity:.5; letter-spacing:.1em; text-transform:uppercase;">Tanzanian Draft</div>
+        <div style="font-size:.75rem; opacity:.5; letter-spacing:.1em; text-transform:uppercase;">Tanzanian Draft Rules</div>
         <ul style="margin:0; padding-left:1.2em; font-size:.88rem; line-height:1.65; opacity:.85;">
           <li>Captures are mandatory</li>
-          <li>Must take the maximum number of pieces</li>
-          <li>Kings fly (any distance on the diagonal)</li>
+          <li>Any legal capture route may be chosen (no max-capture rule)</li>
+          <li>Once a capture starts, the full chain must be completed</li>
+          <li>Flying kings — step-by-step landing after each capture</li>
           <li>Men cannot capture backward</li>
-          <li>Reaching the king row ends your turn</li>
+          <li>Promotion (reaching king row) ends your turn immediately</li>
         </ul>
         <label class="block">Mode
           <select id="cfg-mode"><option value="pvc">Human vs Computer</option><option value="hvh">Human vs Human</option><option value="ava">AI vs AI</option></select>
@@ -747,6 +748,25 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
         <p style="margin-top:10px; opacity:.7;">Keyboard: Tab/Arrows to navigate, Enter to select/piece, Space to confirm move.</p>
       </div>
       <div class="modal-footer"><button class="btn ghost" onclick="App.closeModal('help')" data-i18n="help.close">Close</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-rules">
+    <div class="modal-panel glass">
+      <div class="modal-title">Tanzanian Draft Rules</div>
+      <div class="scroll" style="max-height:60vh; line-height:1.6; font-size:.92rem; opacity:.9;">
+        <p><strong>Captures are mandatory</strong> — if you can capture, you must.</p>
+        <p><strong>Any legal capture route</strong> may be chosen. There is no max-capture rule.</p>
+        <p><strong>Once a capture starts</strong>, the full chain must be completed.</p>
+        <p><strong>Flying kings</strong> — kings move any distance diagonally, landing step-by-step after each capture.</p>
+        <p><strong>Men cannot capture backward.</strong></p>
+        <p><strong>Promotion</strong> — when a man reaches the king row, the turn ends immediately. The newly promoted king does NOT continue capturing.</p>
+        <p style="margin-top:12px; opacity:.6; font-size:.82rem;">Version 1.3 — Grandmaster Rules</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn ghost" onclick="App.closeModal('rules')">Cancel</button>
+        <button class="btn" onclick="App.closeModal('rules'); App._startGameAfterRules()">Play</button>
+      </div>
     </div>
   </div>
 
@@ -3135,6 +3155,11 @@ const App = {
   },
 
   startGame(){
+    this.openModal('rules');
+  },
+
+  _pendingGameCfg: null,
+  _startGameAfterRules(){
     const cfg={
       mode: $('#cfg-mode').value,
       difficulty: $('#cfg-difficulty').value,
