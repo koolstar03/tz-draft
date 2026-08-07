@@ -4234,14 +4234,6 @@ const MP = {
               MP.opponent={uid:match.id, name:oppData.displayName||'Guest', elo:oppElo};
               MP.currentGameId=gRef.id;
 
-              // Auto-add both players as friends
-              MP.db.collection('users').doc(MP.user.uid).update({
-                friends: firebase.firestore.FieldValue.arrayUnion(match.id)
-              }).catch(()=>{});
-              MP.db.collection('users').doc(match.id).update({
-                friends: firebase.firestore.FieldValue.arrayUnion(MP.user.uid)
-              }).catch(()=>{});
-
               overlay.classList.remove('active');
               MP.game.startOnline(gRef.id);
             }else{
