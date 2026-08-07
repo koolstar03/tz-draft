@@ -3071,6 +3071,11 @@ const Game = {
     this.state.board.set(data.board);
     this.state.turn=data.turn; this.state.halfmoveClock=data.halfmoveClock; this.state.history=[...data.history];
     this.lastMove=data.lastMove||null;
+    this.mode=data.mode||'pvc';
+    this.rules = new Rules({
+      flyingKings: true, maxCaptureRule: false, mandatoryCapture: true,
+      backwardCaptureMen: false, promotionEndsTurn: true, size: data.size
+    });
     // Restore repetition map
     this.state.rep.clear();
     if(data.rep){
@@ -4328,14 +4333,18 @@ const MP = {
 
       try{
         const snap=await MP.db.collection('games')
-          .where('roomCode','==',code).where('status','==','waiting').limit(1).get();
+          .where('roomCode','==',code).limit(5).get();
 
-        if(snap.empty){
+        let gDoc=null;
+        snap.forEach(doc=>{
+          const d=doc.data();
+          if(d.status==='waiting' && !gDoc) gDoc=doc;
+        });
+
+        if(!gDoc){
           alert('Room not found. Check the code and try again.');
           return;
         }
-
-        const gDoc=snap.docs[0];
         const gData=gDoc.data();
         const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
         const myData=myDoc.data()||{};
