@@ -263,6 +263,11 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
 }
 @media(max-width:480px){
   :root{ --cell: min(calc((100dvh - 110px) / 8), calc((100vw - 20px) / 8)); }
+  .mp-room-code{ font-size:2.2rem; letter-spacing:.2em; padding:16px !important; }
+  .mp-room-input{ font-size:1.2rem; padding:12px 14px; }
+  .mp-friend-item{ padding:10px 10px; gap:8px; }
+  .mp-friend-action{ padding:5px 10px; font-size:.75rem; }
+  .mp-friends-wrap{ max-height:55vh; }
 }
 
 /* Utility */
@@ -372,30 +377,31 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
 .mp-cancel-btn{ margin-top:12px; background:none; border:1px solid rgba(255,255,255,.2); color:inherit; padding:10px 24px; border-radius:10px; cursor:pointer; }
 
 /* Room code */
-.mp-room-code{ font-size:3rem; font-weight:800; letter-spacing:.3em; font-family:'Courier New',monospace; }
+.mp-room-code{ font-size:3rem; font-weight:800; letter-spacing:.3em; font-family:'Courier New',monospace; word-break:break-all; }
 .mp-room-input{
   background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
   border-radius:12px; padding:14px 18px; color:inherit; font-size:1.4rem;
   font-family:'Courier New',monospace; letter-spacing:.2em; text-align:center;
-  width:min(280px,80vw); outline:none;
+  width:100%; max-width:320px; outline:none; box-sizing:border-box;
 }
 .mp-room-input:focus{ border-color:var(--accent,#00e5ff); }
 .mp-room-input::placeholder{ opacity:.3; letter-spacing:.1em; font-size:1rem; }
 
 /* Friends list */
-.mp-friends-wrap{ width:min(420px,92vw); max-height:60vh; overflow-y:auto; }
+.mp-friends-wrap{ width:100%; max-width:420px; max-height:60vh; overflow-y:auto; }
 .mp-friend-item{
-  display:flex; align-items:center; gap:12px; padding:12px 16px;
-  border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex; align-items:center; gap:10px; padding:12px 14px;
+  border-bottom:1px solid rgba(255,255,255,.06); flex-wrap:wrap;
 }
-.mp-friend-name{ flex:1; font-weight:500; }
-.mp-friend-elo{ font-size:.8rem; opacity:.4; }
+.mp-friend-name{ flex:1; min-width:80px; font-weight:500; font-size:.9rem; }
+.mp-friend-elo{ font-size:.75rem; opacity:.4; }
 .mp-friend-status{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .mp-friend-status.online{ background:#4caf50; }
 .mp-friend-status.offline{ background:#666; }
 .mp-friend-action{
   background:rgba(0,229,255,.15); color:var(--accent,#00e5ff); border:none;
-  padding:6px 14px; border-radius:8px; font-size:.82rem; font-weight:600; cursor:pointer;
+  padding:6px 12px; border-radius:8px; font-size:.8rem; font-weight:600; cursor:pointer;
+  white-space:nowrap;
 }
 .mp-friend-action.challenge{ background:rgba(76,175,80,.2); color:#4caf50; }
 .mp-friend-action.decline{ background:rgba(244,67,54,.15); color:#f44336; }
@@ -404,6 +410,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
 .mp-search-input{
   flex:1; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
   border-radius:10px; padding:10px 14px; color:inherit; font-size:.9rem; outline:none;
+  width:100%; box-sizing:border-box;
 }
 .mp-search-input:focus{ border-color:var(--accent,#00e5ff); }
 
@@ -785,7 +792,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <div class="modal" id="modal-about">
     <div class="modal-panel glass" style="text-align:center;">
       <div style="font-size:4rem; line-height:1; margin-bottom:8px;">&#9823;</div>
-      <div class="modal-title">TZ-Draft v1.3</div>
+      <div class="modal-title">TZ-Draft v1.4</div>
       <div style="opacity:.7; margin-top:4px;" data-i18n="about.subtitle">Tanzanian Draft</div>
       <div style="margin-top:20px; display:flex; flex-direction:column; gap:12px; font-size:.95rem;">
         <div>
@@ -926,9 +933,8 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
     </div>
     <div class="menu-grid">
       <button class="btn" onclick="MP.matchmaking.startRandom()"><span class="btn-icon">&#127760;</span> <span data-i18n="lobby.random">Cheza Online</span></button>
-      <button class="btn ghost" onclick="MP.room.showCreate()"><span class="btn-icon">&#128279;</span> <span data-i18n="lobby.create">Alika Rafiki</span></button>
-      <button class="btn ghost" onclick="MP.room.showJoin()"><span class="btn-icon">&#128221;</span> <span data-i18n="lobby.join">Jiunga kwa Nambari</span></button>
       <button class="btn ghost" onclick="MP.friends.show()"><span class="btn-icon">&#128101;</span> <span data-i18n="lobby.friends">Marafiki</span> <span id="mp-friends-count" style="opacity:.5; font-size:.8rem; margin-left:auto;"></span></button>
+      <button class="btn ghost" onclick="MP.room.showPlayWithFriend()"><span class="btn-icon">&#128279;</span> <span data-i18n="lobby.create">Cheza na Rafiki</span></button>
       <button class="btn ghost" onclick="App.showScreen('menu-screen')"><span class="btn-icon">&#127918;</span> <span data-i18n="lobby.offline">Cheza Offline</span></button>
     </div>
     <div style="display:flex; gap:8px; margin-top:6px;">
@@ -947,13 +953,28 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
 
   <!-- ==================== INVITE SCREEN ==================== -->
   <div id="room-screen" class="screen">
-    <div class="mp-title" id="mp-room-title">Invite Player</div>
-    <div class="mp-subtitle" id="mp-room-subtitle">Share this code with your friend</div>
-    <div class="mp-room-code glass" id="mp-room-code" style="padding:20px 40px; display:none;">------</div>
-    <div id="mp-room-join-area" style="display:none; width:min(320px,85vw); flex-direction:column; gap:12px; align-items:center;">
-      <input class="mp-room-input" id="mp-room-input" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code" autocomplete="off">
-      <button class="btn" onclick="MP.room.join()" style="width:100%;">Join Game</button>
+    <div class="mp-title" id="mp-room-title">Cheza na Rafiki</div>
+    <div class="mp-subtitle" id="mp-room-subtitle">Create a room or join with a code</div>
+
+    <!-- Create room section -->
+    <div id="mp-room-create-area" style="width:100%; max-width:360px; padding:0 16px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; gap:12px;">
+      <div class="mp-room-code glass" id="mp-room-code" style="padding:20px 30px; display:none;">------</div>
+      <div id="mp-room-waiting" style="display:none; text-align:center; opacity:.6; font-size:.9rem;">Waiting for opponent to join...</div>
+      <button class="btn" id="mp-room-create-btn" onclick="MP.room.showCreate()" style="width:100%;">Create Room & Share Code</button>
     </div>
+
+    <div style="width:100%; max-width:360px; padding:0 16px; box-sizing:border-box; margin-top:16px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <div style="flex:1; height:1px; background:rgba(255,255,255,.1);"></div>
+        <div style="font-size:.8rem; opacity:.4;">OR</div>
+        <div style="flex:1; height:1px; background:rgba(255,255,255,.1);"></div>
+      </div>
+      <div id="mp-room-join-area" style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+        <input class="mp-room-input" id="mp-room-input" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code" autocomplete="off">
+        <button class="btn ghost" onclick="MP.room.join()" style="width:100%;">Join Game</button>
+      </div>
+    </div>
+
     <div style="display:flex; gap:10px; margin-top:16px;">
       <button class="btn ghost" onclick="MP.room.cancel(); App.showScreen('lobby-screen')">Back</button>
     </div>
@@ -962,7 +983,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <!-- ==================== FRIENDS SCREEN ==================== -->
   <div id="friends-screen" class="screen">
     <div class="mp-title">Friends</div>
-    <div style="width:min(420px,92vw);">
+    <div style="width:100%; max-width:420px; padding:0 16px; box-sizing:border-box;">
       <div class="mp-search-wrap">
         <input class="mp-search-input" id="mp-friend-search" placeholder="Search by name..." oninput="MP.friends.search(this.value)">
       </div>
@@ -1143,10 +1164,8 @@ const LANG_DATA = {
     // Lobby
     'lobby.random': 'Random Match',
     'lobby.random.desc': 'Find an opponent online',
-    'lobby.create': 'Invite Player',
-    'lobby.create.desc': 'Get a code to share with a friend',
-    'lobby.join': 'Join by Code',
-    'lobby.join.desc': 'Enter a friend\'s code',
+    'lobby.create': 'Play with Friend',
+    'lobby.create.desc': 'Create a room or join with a code',
     'lobby.friends': 'Friends',
     'lobby.friends.desc': '0 online',
     'lobby.offline': 'Play Offline',
@@ -1312,10 +1331,8 @@ const LANG_DATA = {
     'profile.createBtn': 'Unda Wasifu & Cheza',
     'lobby.random': 'Cheza Online',
     'lobby.random.desc': 'Tafuta mtu wa kukucheza',
-    'lobby.create': 'Alika Rafiki',
-    'lobby.create.desc': 'Pata nambari ya kumshirikisha rafiki',
-    'lobby.join': 'Jiunga kwa Nambari',
-    'lobby.join.desc': 'Weka nambari ya rafiki yako',
+    'lobby.create': 'Cheza na Rafiki',
+    'lobby.create.desc': 'Fumba chumba au jiunga kwa nambari',
     'lobby.friends': 'Marafiki',
     'lobby.friends.desc': '0 wameingia',
     'lobby.offline': 'Cheza Offline',
@@ -1634,7 +1651,7 @@ class State{
 }
 
 /* =========================================================
-   GRANDMASTER DRAUGHTS RULES v1.3 (Tanzanian)
+   GRANDMASTER DRAUGHTS RULES v1.4 (Tanzanian)
    ---------------------------------------------------------
    - No maximum capture priority: any legal capture route may be chosen.
    - Mandatory capture: once a capture path starts, the full chain must be completed.
@@ -4205,7 +4222,9 @@ const MP = {
                 status: 'playing',
                 moves: [],
                 createdAt: Date.now(),
-                mode: 'random'
+                mode: 'random',
+                lastUpdatedBy: MP.user.uid,
+                version: 0
               });
 
               // Delete other player's queue entry
@@ -4248,11 +4267,18 @@ const MP = {
   room:{
     _waiting: null,
 
-    showCreate(){
+    showPlayWithFriend(){
       App.showScreen('room-screen');
-      $('#mp-room-title').textContent='Invite Player';
-      $('#mp-room-subtitle').textContent='Share this code with your friend';
-      $('#mp-room-code').style.display='block';
+      $('#mp-room-title').textContent='Cheza na Rafiki';
+      $('#mp-room-subtitle').textContent='Create a room or join with a code';
+      $('#mp-room-code').style.display='none';
+      $('#mp-room-waiting').style.display='none';
+      $('#mp-room-create-btn').style.display='';
+      $('#mp-room-join-area').style.display='flex';
+    },
+
+    showCreate(){
+      $('#mp-room-create-btn').style.display='none';
       $('#mp-room-join-area').style.display='none';
       this._createRoom();
     },
@@ -4260,6 +4286,8 @@ const MP = {
     async _createRoom(){
       const code=String(Math.floor(100000+Math.random()*900000));
       $('#mp-room-code').textContent=code;
+      $('#mp-room-code').style.display='block';
+      $('#mp-room-waiting').style.display='block';
 
       if(!MP.user) return;
       const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
@@ -4271,7 +4299,9 @@ const MP = {
         elo:{white:myData.elo||1200, black:0},
         board:null, turn:'white', status:'waiting',
         moves:[], createdAt:Date.now(), mode:'room',
-        roomCode:code
+        roomCode:code,
+        lastUpdatedBy: MP.user.uid,
+        version: 0
       });
 
       MP.currentGameId=gRef.id;
@@ -4286,14 +4316,6 @@ const MP = {
           MP.game.startOnline(gRef.id);
         }
       });
-    },
-
-    showJoin(){
-      App.showScreen('room-screen');
-      $('#mp-room-title').textContent='Join by Code';
-      $('#mp-room-subtitle').textContent='Enter your friend\'s 6-digit code';
-      $('#mp-room-code').style.display='none';
-      $('#mp-room-join-area').style.display='flex';
     },
 
     async join(){
@@ -4321,7 +4343,8 @@ const MP = {
         'players.black': MP.user.uid,
         'names.black': MP.user.displayName||'Guest',
         'elo.black': myData.elo||1200,
-        status:'playing'
+        status:'playing',
+        lastUpdatedBy: MP.user.uid
       });
 
       MP.myColor='black';
@@ -4530,7 +4553,8 @@ const MP = {
         names:{white:MP.user.displayName||'Guest', black:friendName},
         elo:{white:myData.elo||1200, black:friendElo},
         board:null, turn:'white', status:'challenge',
-        moves:[], createdAt:Date.now(), mode:'friend'
+        moves:[], createdAt:Date.now(), mode:'friend',
+        lastUpdatedBy: MP.user.uid, version: 0
       });
 
       // Send challenge notification to friend
@@ -4577,7 +4601,8 @@ const MP = {
       const myData=myDoc.data()||{};
 
       await MP.db.collection('games').doc(ch.gameId).update({
-        status:'playing'
+        status:'playing',
+        lastUpdatedBy: MP.user.uid
       });
 
       MP.myColor='black';
@@ -4598,18 +4623,22 @@ const MP = {
   /* ---- GAME SYNC ---- */
   game:{
     _unsub: null,
+    _lastSentVersion: 0,
 
     startOnline(gameId){
       MP.currentGameId=gameId;
       Game.newGame({mode:'online', difficulty:'medium', boardSize:8, firstMove:'human'});
       Game.aiWhite=null; Game.aiBlack=null;
       Game.viewSide = MP.myColor==='black' ? 2 : 1;
+      this._lastSentVersion=0;
       // Write initial board to Firestore
       MP.db.collection('games').doc(gameId).update({
         board: Array.from(Game.state.board),
         boardSize: Game.state.size,
         history: [],
-        moves: []
+        moves: [],
+        lastUpdatedBy: MP.user.uid,
+        version: 0
       }).catch(()=>{});
       App.showScreen('game-screen');
       this._updatePlayerBar();
@@ -4624,6 +4653,8 @@ const MP = {
         }
         if(d.status!=='playing') return;
         if(!d.board) return;
+        // Skip self-echo: ignore updates we sent ourselves
+        if(d.lastUpdatedBy===MP.user.uid) return;
         const sz=d.boardSize||8;
         if(d.board && d.board.length===sz*sz){
           const prevSize=Game.state?Game.state.size:0;
@@ -4685,6 +4716,7 @@ const MP = {
       if(!MP.currentGameId) return;
       const moveData={from:mv.from, to:mv.to, captures:mv.captures.map(c=>c), notation:Game.notation(mv)};
       const gameRef=MP.db.collection('games').doc(MP.currentGameId);
+      this._lastSentVersion=(this._lastSentVersion||0)+1;
       await gameRef.update({
         board: Array.from(Game.state.board),
         turn: Game.state.turn===COLOR.W?'white':'black',
@@ -4692,20 +4724,25 @@ const MP = {
         history: firebase.firestore.FieldValue.arrayUnion(moveData),
         halfmoveClock: Game.state.halfmoveClock,
         lastMove: {from:mv.from, to:mv.to},
-        boardSize: Game.state.size
+        boardSize: Game.state.size,
+        lastUpdatedBy: MP.user.uid,
+        version: this._lastSentVersion
       });
     },
 
     async sendFullState(){
       if(!MP.currentGameId) return;
       const gameRef=MP.db.collection('games').doc(MP.currentGameId);
+      this._lastSentVersion=(this._lastSentVersion||0)+1;
       await gameRef.update({
         board: Array.from(Game.state.board),
         turn: Game.state.turn===COLOR.W?'white':'black',
         halfmoveClock: Game.state.halfmoveClock,
         history: Game.state.history,
         lastMove: Game.lastMove,
-        boardSize: Game.state.size
+        boardSize: Game.state.size,
+        lastUpdatedBy: MP.user.uid,
+        version: this._lastSentVersion
       });
     },
 
@@ -4839,7 +4876,8 @@ const MP = {
         elo:{white:newWhiteElo, black:newBlackElo},
         board:null, turn:'white', status:'waiting',
         moves:[], history:[], createdAt:Date.now(), mode:'rematch',
-        roomCode:gameData.roomCode||null
+        roomCode:gameData.roomCode||null,
+        lastUpdatedBy: MP.user.uid, version: 0
       });
       
       // Notify other player via current game document
@@ -4860,18 +4898,26 @@ const MP = {
     async resign(){
       if(!MP.currentGameId || !MP.user) return;
       if(!confirm('Are you sure you want to resign?')) return;
+      const ref=MP.db.collection('games').doc(MP.currentGameId);
+      const snap=await ref.get();
+      if(snap.exists && snap.data().status==='finished') return;
       const winner=MP.myColor==='white'?'black':'white';
-      await MP.db.collection('games').doc(MP.currentGameId).update({
+      await ref.update({
         status:'finished',
         result:winner,
-        gameOverMsg: (MP.user.displayName||'You')+' resigned.'
+        gameOverMsg: (MP.user.displayName||'You')+' resigned.',
+        lastUpdatedBy: MP.user.uid
       });
     },
 
     async sendGameOver(result, msg){
       if(!MP.currentGameId) return;
-      await MP.db.collection('games').doc(MP.currentGameId).update({
-        status:'finished', result:result, gameOverMsg:msg
+      const ref=MP.db.collection('games').doc(MP.currentGameId);
+      const snap=await ref.get();
+      if(snap.exists && snap.data().status==='finished') return;
+      await ref.update({
+        status:'finished', result:result, gameOverMsg:msg,
+        lastUpdatedBy: MP.user.uid
       });
     },
 
@@ -5042,9 +5088,9 @@ const MP = {
   MP.init();
 
   // Auto-update checker
-  App.CURRENT_VERSION='1.3';
+  App.CURRENT_VERSION='1.4';
   App.UPDATE_URL='https://koolstar03.github.io/tz-draft/version.txt';
-  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v1.3.apk';
+  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v1.4.apk';
   const verEl=$('#app-ver');
   if(verEl) verEl.textContent='v'+App.CURRENT_VERSION;
   (async()=>{
