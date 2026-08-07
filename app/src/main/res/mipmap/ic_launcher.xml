@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Board background (dark green) -->
+    <path
+        android:fillColor="#1B5E20"
+        android:pathData="M0,0h108v108H0z" />
+
+    <!-- Checker pattern -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M0,0h13.5v13.5H0zM27,0h13.5v13.5H27zM54,0h13.5v13.5H54zM81,0h13.5v13.5H81zM13.5,13.5h13.5v13.5H13.5zM40.5,13.5h13.5v13.5H40.5zM67.5,13.5h13.5v13.5H67.5zM0,27h13.5v13.5H0zM27,27h13.5v13.5H27zM54,27h13.5v13.5H54zM81,27h13.5v13.5H81zM13.5,40.5h13.5v13.5H13.5zM40.5,40.5h13.5v13.5H40.5zM67.5,40.5h13.5v13.5H67.5zM0,54h13.5v13.5H0zM27,54h13.5v13.5H27zM54,54h13.5v13.5H54zM81,54h13.5v13.5H81zM13.5,67.5h13.5v13.5H13.5zM40.5,67.5h13.5v13.5H40.5zM67.5,67.5h13.5v13.5H67.5zM0,81h13.5v13.5H0zM27,81h13.5v13.5H27zM54,81h13.5v13.5H54zM81,81h13.5v13.5H81z" />
+
+    <!-- Draughts piece (dark circle with ring) -->
+    <path
+        android:fillColor="#212121"
+        android:pathData="M54,54m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0" />
+    <path
+        android:fillColor="#424242"
+        android:pathData="M54,54m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" />
+    <path
+        android:fillColor="#212121"
+        android:pathData="M54,54m-14,0a14,14 0,1 1,28 0a14,14 0,1 1,-28 0" />
+
+    <!-- Highlight on piece -->
+    <path
+        android:fillColor="#616161"
+        android:pathData="M46,44m-4,0a4,3 0,1 1,8 0a4,3 0,1 1,-8 0" />
+</vector>
