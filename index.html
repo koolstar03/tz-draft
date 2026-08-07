@@ -768,7 +768,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
         <p><strong>Flying kings</strong> — kings move any distance diagonally, landing step-by-step after each capture.</p>
         <p><strong>Men cannot capture backward.</strong></p>
         <p><strong>Promotion</strong> — when a man reaches the king row, the turn ends immediately. The newly promoted king does NOT continue capturing.</p>
-        <p style="margin-top:12px; opacity:.6; font-size:.82rem;">Version 1.4 — Grandmaster Rules</p>
+        <p style="margin-top:12px; opacity:.6; font-size:.82rem;">Version 1.5 — Grandmaster Rules</p>
       </div>
       <div class="modal-footer">
         <button class="btn ghost" onclick="App.closeModal('rules')">Cancel</button>
@@ -792,7 +792,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <div class="modal" id="modal-about">
     <div class="modal-panel glass" style="text-align:center;">
       <div style="font-size:4rem; line-height:1; margin-bottom:8px;">&#9823;</div>
-      <div class="modal-title">TZ-Draft v1.4</div>
+      <div class="modal-title">TZ-Draft v1.5</div>
       <div style="opacity:.7; margin-top:4px;" data-i18n="about.subtitle">Tanzanian Draft</div>
       <div style="margin-top:20px; display:flex; flex-direction:column; gap:12px; font-size:.95rem;">
         <div>
@@ -5157,9 +5157,9 @@ const MP = {
   MP.init();
 
   // Auto-update checker
-  App.CURRENT_VERSION='1.4';
+  App.CURRENT_VERSION='1.5';
   App.UPDATE_URL='https://koolstar03.github.io/tz-draft/version.txt';
-  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v1.4.apk';
+  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v1.5.apk';
   const verEl=$('#app-ver');
   if(verEl) verEl.textContent='v'+App.CURRENT_VERSION;
   (async()=>{
