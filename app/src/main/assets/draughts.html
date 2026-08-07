@@ -952,7 +952,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   </div>
 
   <!-- ==================== INVITE SCREEN ==================== -->
-  <div id="room-screen" class="screen">
+  <div id="room-screen" class="screen" style="justify-content:flex-start; padding-top:40px;">
     <div class="mp-title" id="mp-room-title">Cheza na Rafiki</div>
     <div class="mp-subtitle" id="mp-room-subtitle">Create a room or join with a code</div>
 
@@ -4326,43 +4326,48 @@ const MP = {
       }
       if(!MP.user) return;
 
-      const snap=await MP.db.collection('games')
-        .where('roomCode','==',code).where('status','==','waiting').limit(1).get();
+      try{
+        const snap=await MP.db.collection('games')
+          .where('roomCode','==',code).where('status','==','waiting').limit(1).get();
 
-      if(snap.empty){
-        alert('Room not found. Check the code and try again.');
-        return;
+        if(snap.empty){
+          alert('Room not found. Check the code and try again.');
+          return;
+        }
+
+        const gDoc=snap.docs[0];
+        const gData=gDoc.data();
+        const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
+        const myData=myDoc.data()||{};
+
+        await MP.db.collection('games').doc(gDoc.id).update({
+          'players.black': MP.user.uid,
+          'names.black': MP.user.displayName||'Guest',
+          'elo.black': myData.elo||1200,
+          status:'playing',
+          lastUpdatedBy: MP.user.uid
+        });
+
+        MP.myColor='black';
+        MP.opponent={uid:gData.players.white, name:gData.names.white, elo:gData.elo.white};
+        MP.currentGameId=gDoc.id;
+
+        // Auto-add both players as friends
+        const creatorUid=gData.players.white;
+        if(creatorUid && creatorUid!==MP.user.uid){
+          MP.db.collection('users').doc(MP.user.uid).update({
+            friends: firebase.firestore.FieldValue.arrayUnion(creatorUid)
+          }).catch(()=>{});
+          MP.db.collection('users').doc(creatorUid).update({
+            friends: firebase.firestore.FieldValue.arrayUnion(MP.user.uid)
+          }).catch(()=>{});
+        }
+
+        MP.game.startOnline(gDoc.id);
+      }catch(e){
+        console.error('Join room error:',e);
+        alert('Failed to join room. Please try again.');
       }
-
-      const gDoc=snap.docs[0];
-      const gData=gDoc.data();
-      const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
-      const myData=myDoc.data()||{};
-
-      await MP.db.collection('games').doc(gDoc.id).update({
-        'players.black': MP.user.uid,
-        'names.black': MP.user.displayName||'Guest',
-        'elo.black': myData.elo||1200,
-        status:'playing',
-        lastUpdatedBy: MP.user.uid
-      });
-
-      MP.myColor='black';
-      MP.opponent={uid:gData.players.white, name:gData.names.white, elo:gData.elo.white};
-      MP.currentGameId=gDoc.id;
-
-      // Auto-add both players as friends
-      const creatorUid=gData.players.white;
-      if(creatorUid && creatorUid!==MP.user.uid){
-        MP.db.collection('users').doc(MP.user.uid).update({
-          friends: firebase.firestore.FieldValue.arrayUnion(creatorUid)
-        }).catch(()=>{});
-        MP.db.collection('users').doc(creatorUid).update({
-          friends: firebase.firestore.FieldValue.arrayUnion(MP.user.uid)
-        }).catch(()=>{});
-      }
-
-      MP.game.startOnline(gDoc.id);
     },
 
     cancel(){
