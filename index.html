@@ -792,7 +792,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <div class="modal" id="modal-about">
     <div class="modal-panel glass" style="text-align:center;">
       <div style="font-size:4rem; line-height:1; margin-bottom:8px;">&#9823;</div>
-      <div class="modal-title">TZ-Draft v1.7</div>
+      <div class="modal-title">TZ-Draft v1.8</div>
       <div style="opacity:.7; margin-top:4px;" data-i18n="about.subtitle">Tanzanian Draft</div>
       <div style="margin-top:20px; display:flex; flex-direction:column; gap:12px; font-size:.95rem;">
         <div>
@@ -927,7 +927,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
         <div class="mp-avatar" id="mp-avatar" style="width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:1.4rem; border:2px solid rgba(255,255,255,.15);"></div>
         <div style="text-align:left;">
           <div style="display:flex; align-items:center; gap:6px; font-weight:700; font-size:1.1rem;" id="mp-lobby-name">Guest</div>
-          <div style="opacity:.5; font-size:.8rem;" id="mp-lobby-level">Level 1 \u00b7 <span id="mp-lobby-elo">ELO 1200</span></div>
+          <div style="opacity:.5; font-size:.8rem;" id="mp-lobby-level">Level 1 \u00b7 <span id="mp-lobby-elo">Rating 1200</span></div>
         </div>
       </div>
     </div>
@@ -947,7 +947,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <div id="match-overlay" class="mp-match-overlay">
     <div class="mp-spinner"></div>
     <div class="mp-match-text" id="mp-match-text">Searching for opponent...</div>
-    <div class="mp-match-sub" id="mp-match-sub">ELO range: ±200</div>
+    <div class="mp-match-sub" id="mp-match-sub">Rating range: ±200</div>
     <button class="mp-cancel-btn" onclick="MP.matchmaking.cancel()">Cancel</button>
   </div>
 
@@ -1193,7 +1193,7 @@ const LANG_DATA = {
     'friends.noFriends': 'No friends yet. Search above!',
     // Matchmaking
     'match.searching': 'Searching for opponent...',
-    'match.range': 'ELO range',
+    'match.range': 'Rating range',
     'match.cancel': 'Cancel',
     // Profile
     'profile.title': 'Profile',
@@ -1357,7 +1357,7 @@ const LANG_DATA = {
     'friends.noResults': 'Hakuna mtu aliyeonekana',
     'friends.noFriends': 'Hakuna marafiki bado. Tafuta hapo juu!',
     'match.searching': 'Inatafuta mtu wa kukucheza...',
-    'match.range': 'ELO',
+    'match.range': 'Rating',
     'match.cancel': 'Ghairi',
     'profile.title': 'Profile',
     'profile.games': 'Michezo',
@@ -4133,9 +4133,9 @@ const MP = {
     const lv=sData.level||1;
     const equippedTitle=(sData.equipped||{}).title;
     const titleName=equippedTitle?MP.titles.getName(equippedTitle,currentLang):'';
-    $('#mp-lobby-elo').textContent=`ELO ${elo}`;
+    $('#mp-lobby-elo').textContent=`Rating ${elo}`;
     const lvEl=$('#mp-lobby-level');
-    if(lvEl) lvEl.innerHTML=`Level ${lv}${titleName?' \u00b7 '+titleName:''} \u00b7 <span id="mp-lobby-elo">ELO ${elo}</span>`;
+    if(lvEl) lvEl.innerHTML=`Level ${lv}${titleName?' \u00b7 '+titleName:''} \u00b7 <span id="mp-lobby-elo">Rating ${elo}</span>`;
   },
 
   /* ---- AUTH ---- */
@@ -4216,7 +4216,7 @@ const MP = {
       const overlay=$('#match-overlay');
       overlay.classList.add('active');
       $('#mp-match-text').textContent='Searching for opponent...';
-      $('#mp-match-sub').textContent='ELO range: ±200';
+      $('#mp-match-sub').textContent='Rating range: ±200';
 
       const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
       this._myElo=(myDoc.data()||{}).elo||1200;
@@ -4290,7 +4290,7 @@ const MP = {
             }else{
               // Expand range every 5 seconds if no match
               range=Math.min(range+100, 800);
-              $('#mp-match-sub').textContent=`ELO range: ±${range}`;
+              $('#mp-match-sub').textContent=`Rating range: ±${range}`;
             }
           }catch(e){ console.error('Match error:',e); }
         });
@@ -4467,7 +4467,7 @@ const MP = {
           if(d.activeChallenge){
             const ch=d.activeChallenge;
             MP._challengeData=ch;
-            $('#mp-challenge-text').textContent=`${ch.fromName} (ELO ${ch.fromElo}) challenges you!`;
+            $('#mp-challenge-text').textContent=`${ch.fromName} (Rating ${ch.fromElo}) challenges you!`;
             $('#mp-challenge-toast').classList.add('active');
           }else{
             $('#mp-challenge-toast').classList.remove('active');
@@ -4504,7 +4504,7 @@ const MP = {
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${fd.online?'online':'offline'}"></div>
             <div class="mp-friend-name">${fd.displayName||'User'}</div>
-            <div class="mp-friend-elo">${fd.elo||1200}</div>
+            <div class="mp-friend-elo">Rating ${fd.elo||1200}</div>
             <button class="mp-friend-action" onclick="MP.friends.accept('${fid}')">Accept</button>
             <button class="mp-friend-action decline" onclick="MP.friends.decline('${fid}')">Decline</button>
           </div>`;
@@ -4522,7 +4522,7 @@ const MP = {
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${fd.online?'online':'offline'}"></div>
             <div class="mp-friend-name">${fd.displayName||'User'}</div>
-            <div class="mp-friend-elo">${fd.elo||1200}</div>
+            <div class="mp-friend-elo">Rating ${fd.elo||1200}</div>
             ${fd.online?`<button class="mp-friend-action challenge" onclick="MP.friends.challenge('${fid}','${fd.displayName||'User'}',${fd.elo||1200})">Challenge</button>`:''}
           </div>`;
         }
@@ -4558,7 +4558,7 @@ const MP = {
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${d.online?'online':'offline'}"></div>
             <div class="mp-friend-name">${d.displayName||'User'}</div>
-            <div class="mp-friend-elo">${d.elo||1200}</div>
+            <div class="mp-friend-elo">Rating ${d.elo||1200}</div>
             ${btn}
           </div>`;
         });
@@ -4778,7 +4778,7 @@ const MP = {
         <div class="mp-player-color ${oppSide.toLowerCase()}"></div>
         <div class="mp-player-detail">
           <div class="mp-player-detail-name">${MP.opponent.name} <span class="mp-friend-status online" style="margin-left:6px;"></span></div>
-          <div class="mp-player-detail-elo">ELO ${MP.opponent.elo}</div>
+          <div class="mp-player-detail-elo">Rating ${MP.opponent.elo}</div>
         </div>
         <div class="mp-game-actions">
           ${isFriend?'<span style="font-size:.7rem; opacity:.5;">Friends</span>':`<button class="mp-game-action-btn" onclick="MP.friends.addOpponent()" style="font-size:.7rem; padding:4px 8px;" data-i18n="game.addFriend">Add Friend</button>`}
@@ -5164,9 +5164,9 @@ const MP = {
   MP.init();
 
   // Auto-update checker
-  App.CURRENT_VERSION='1.7';
+  App.CURRENT_VERSION='1.8';
   App.UPDATE_URL='https://koolstar03.github.io/tz-draft/version.txt';
-  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v1.7.apk';
+  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v1.8.apk';
   const verEl=$('#app-ver');
   if(verEl) verEl.textContent='v'+App.CURRENT_VERSION;
   (async()=>{
