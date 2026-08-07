@@ -650,7 +650,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
           <div id="ai-thinker"><div class="thinking-text">Thinking<div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div id="ai-info"></div></div>
         </div>
         <div id="controls" style="margin-top:14px; display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; position:relative;">
-          <button class="btn ghost" style="padding:8px 12px; font-size:.8rem;" onclick="Game.hint()" title="Hint">&#128161; <span data-i18n="game.hint">Dokezo</span></button>
+          <button class="btn ghost" style="padding:8px 12px; font-size:.8rem;" onclick="Game.hint()" title="Hint">&#128161; <span data-i18n="game.hint">Dokezo</span> <span id="hint-count" style="opacity:.5; font-size:.75rem;"></span></button>
           <button id="btn-undo" class="btn ghost" style="padding:8px 12px; font-size:.8rem; display:none;" onclick="Game.undo()" title="Undo">&#8630; <span data-i18n="game.undo">Rudia</span></button>
           <button class="btn ghost" style="padding:8px 12px; font-size:.8rem;" onclick="Game.rotateBoard()" title="Rotate">&#128260; <span data-i18n="game.rotate">Geuza</span></button>
           <button class="btn ghost chat-toggle" style="padding:8px 12px; font-size:.8rem;" onclick="Chat.toggle()">&#128172; <span data-i18n="game.chat">Chat</span><span id="chat-badge" class="chat-badge">0</span></button>
@@ -1457,7 +1457,7 @@ try{ Settings.init(); }catch(e){}
 const Stats = {
   data: (()=>{ try{ return JSON.parse(lsGet('dc_stats')||'{}'); }catch(e){} return {}; })(),
   ensure(){
-    const base = {games:0,wins:0,losses:0,draws:0,totalMoves:0,totalTime:0,bestTime:null};
+    const base = {games:0,wins:0,losses:0,draws:0,totalMoves:0,totalTime:0,bestTime:null,hints:3};
     this.data = { ...base, ...this.data };
     this.save();
   },
@@ -1467,7 +1467,12 @@ const Stats = {
     this.data.games++;
     this.data.totalMoves += moves;
     this.data.totalTime += seconds;
-    if(result==='win') this.data.wins++;
+    if(result==='win'){
+      // Only award hints for beating humans (not AI)
+      const isOnlineHuman = this.mode==='online' || this.mode==='hvh';
+      if(isOnlineHuman) this.data.hints=(this.data.hints||0)+1;
+      this.data.wins++;
+    }
     if(result==='loss') this.data.losses++;
     if(result==='draw') this.data.draws++;
     if(result==='win' && (this.data.bestTime===null || seconds < this.data.bestTime)) this.data.bestTime = seconds;
@@ -3091,11 +3096,45 @@ const Game = {
   },
 
   hint(){
-    const turn=this.state.turn;
+    // Check if hints are available
+    if(MP.user && MP.db){
+      // Online: check Firestore
+      MP.db.collection('userStats').doc(MP.user.uid).get().then(snap=>{
+        const d=snap.data()||{};
+        const hints=d.hints||0;
+        if(hints<=0){ alert('No hints left! Win a game to earn a hint.'); return; }
+        this._useHint();
+        MP.db.collection('userStats').doc(MP.user.uid).update({hints:firebase.firestore.FieldValue.increment(-1)}).catch(()=>{});
+      }).catch(()=>{ this._useHint(); });
+    }else{
+      // Offline: check localStorage
+      Stats.ensure();
+      const hints=Stats.data.hints||0;
+      if(hints<=0){ alert('No hints left! Win a game to earn a hint.'); return; }
+      this._useHint();
+      Stats.data.hints=Math.max(0,hints-1);
+      Stats.save();
+    }
+  },
+  _useHint(){
     const ai = new AI('expert');
     const mv = ai.pickMove(this.state.clone(), this.rules);
     if(!mv) return;
     Renderer.highlightHint(mv.from, mv.to);
+    this.updateHintCount();
+  },
+  updateHintCount(){
+    const el=$('#hint-count');
+    if(!el) return;
+    if(MP.user && MP.db){
+      MP.db.collection('userStats').doc(MP.user.uid).get().then(snap=>{
+        const d=snap.data()||{};
+        el.textContent='('+((d.hints)||0)+')';
+      }).catch(()=>{ el.textContent=''; });
+    }else{
+      Stats.ensure();
+      el.textContent='('+((Stats.data.hints)||0)+')';
+    }
   },
   resign(){
     if(this.mode==='online' && MP.user){
@@ -3191,6 +3230,7 @@ const App = {
     Settings.set('difficulty', cfg.difficulty);
     Game.newGame(cfg);
     this.showScreen('game-screen');
+    Game.updateHintCount();
   },
 
   pauseToMenu(){ Chat.stopListening(); this.showScreen('menu-screen'); },
@@ -3720,7 +3760,7 @@ const MP = {
       // 1. Update gamesPlayed/wins/losses/draws FIRST
       const statsUpdate={};
       statsUpdate.gamesPlayed = firebase.firestore.FieldValue.increment(1);
-      if(result==='win') statsUpdate.wins = firebase.firestore.FieldValue.increment(1);
+      if(result==='win'){ statsUpdate.wins = firebase.firestore.FieldValue.increment(1); statsUpdate.hints = firebase.firestore.FieldValue.increment(1); }
       else if(result==='loss') statsUpdate.losses = firebase.firestore.FieldValue.increment(1);
       else statsUpdate.draws = firebase.firestore.FieldValue.increment(1);
       await ref.set(statsUpdate,{merge:true}).catch(()=>{});
@@ -3827,7 +3867,7 @@ const MP = {
       const uSnap=await MP.db.collection('users').doc(MP.user.uid).get();
       const sSnap=await MP.db.collection('userStats').doc(MP.user.uid).get();
       const u=uSnap.exists?uSnap.data():{};
-      const s=sSnap.exists?sSnap.data():{totalStars:0,level:1,starsInLevel:0,wins:0,losses:0,draws:0,gamesPlayed:0};
+      const s=sSnap.exists?sSnap.data():{totalStars:0,level:1,starsInLevel:0,wins:0,losses:0,draws:0,gamesPlayed:0,hints:3};
       const totalStars=s.totalStars||0;
       const lv=s.level||1;
       const needed=MP.stars.starsForLevel(lv);
@@ -4041,7 +4081,7 @@ const MP = {
       // Initialize progression stats
       MP.db.collection('userStats').doc(u.uid).set({
         totalStars:0, level:1, starsInLevel:0,
-        wins:0, losses:0, draws:0, gamesPlayed:0,
+        wins:0, losses:0, draws:0, gamesPlayed:0, hints:3,
         equipped:{title:null,board:null,pieces:null,border:null,avatar:null},
         unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:[],pieces:[],borders:[],avatars:[]}},
         achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
@@ -4666,6 +4706,7 @@ const MP = {
         version: 0
       }).catch(()=>{});
       App.showScreen('game-screen');
+      Game.updateHintCount();
       this._updatePlayerBar();
       Chat.startListening();
       if(MP._unsubGame) MP._unsubGame();
@@ -5096,7 +5137,7 @@ const MP = {
       const data=JSON.parse(auto);
       const btn=document.createElement('button');
       btn.className='btn ghost'; btn.innerHTML='<span class="btn-icon">&#9658;</span> Continue Last Game';
-      btn.onclick=()=>{ Game.restore(data); Renderer.init(data.size); Game.update(); Game.startTimer(); App.showScreen('game-screen'); };
+      btn.onclick=()=>{ Game.restore(data); Renderer.init(data.size); Game.update(); Game.startTimer(); App.showScreen('game-screen'); Game.updateHintCount(); };
       // Add to lobby screen only
       const lobbyGrid=document.querySelector('#lobby-screen .menu-grid');
       if(lobbyGrid) lobbyGrid.appendChild(btn);
