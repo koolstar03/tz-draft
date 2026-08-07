@@ -792,7 +792,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <div class="modal" id="modal-about">
     <div class="modal-panel glass" style="text-align:center;">
       <div style="font-size:4rem; line-height:1; margin-bottom:8px;">&#9823;</div>
-      <div class="modal-title">TZ-Draft v1.6</div>
+      <div class="modal-title">TZ-Draft v1.7</div>
       <div style="opacity:.7; margin-top:4px;" data-i18n="about.subtitle">Tanzanian Draft</div>
       <div style="margin-top:20px; display:flex; flex-direction:column; gap:12px; font-size:.95rem;">
         <div>
@@ -4052,10 +4052,10 @@ const MP = {
       });
       this.db = firebase.firestore();
       this.fbAuth = firebase.auth();
-      this.fbAuth.onAuthStateChanged(u=>{
+      this.fbAuth.onAuthStateChanged(async u=>{
         if(u){
           this.user=u;
-          this._ensureUserDoc(u);
+          await this._ensureUserDoc(u);
           this._enterLobby();
         } else {
           App.showScreen('menu-screen');
@@ -4077,6 +4077,8 @@ const MP = {
         online: true,
         lastSeen: Date.now()
       });
+      this.user.displayName=u.displayName||'Guest';
+      this.user.photoURL=u.photoURL||'';
       MP._friendProfileCache[u.uid]={displayName:u.displayName||'Guest',photoURL:u.photoURL||'',elo:1200,friends:[],pendingRequests:[],online:true};
       // Initialize progression stats
       MP.db.collection('userStats').doc(u.uid).set({
@@ -4088,6 +4090,8 @@ const MP = {
       },{merge:true}).catch(()=>{});
     }else{
       await ref.update({online:true, lastSeen:Date.now()});
+      this.user.displayName=snap.data().displayName||'Guest';
+      this.user.photoURL=snap.data().photoURL||'';
       MP._friendProfileCache[u.uid]=snap.data();
     }
   },
@@ -4158,6 +4162,8 @@ const MP = {
       try{
         const result=await firebase.auth().signInAnonymously();
         MP.user=result.user;
+        MP.user.displayName=name;
+        MP.user.photoURL='';
 
         const profileData={
           displayName:name,
@@ -5158,9 +5164,9 @@ const MP = {
   MP.init();
 
   // Auto-update checker
-  App.CURRENT_VERSION='1.6';
+  App.CURRENT_VERSION='1.7';
   App.UPDATE_URL='https://koolstar03.github.io/tz-draft/version.txt';
-  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v1.6.apk';
+  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v1.7.apk';
   const verEl=$('#app-ver');
   if(verEl) verEl.textContent='v'+App.CURRENT_VERSION;
   (async()=>{
