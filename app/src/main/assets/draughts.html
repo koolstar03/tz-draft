@@ -4234,6 +4234,14 @@ const MP = {
               MP.opponent={uid:match.id, name:oppData.displayName||'Guest', elo:oppElo};
               MP.currentGameId=gRef.id;
 
+              // Auto-add both players as friends
+              MP.db.collection('users').doc(MP.user.uid).update({
+                friends: firebase.firestore.FieldValue.arrayUnion(match.id)
+              }).catch(()=>{});
+              MP.db.collection('users').doc(match.id).update({
+                friends: firebase.firestore.FieldValue.arrayUnion(MP.user.uid)
+              }).catch(()=>{});
+
               overlay.classList.remove('active');
               MP.game.startOnline(gRef.id);
             }else{
@@ -4350,6 +4358,17 @@ const MP = {
       MP.myColor='black';
       MP.opponent={uid:gData.players.white, name:gData.names.white, elo:gData.elo.white};
       MP.currentGameId=gDoc.id;
+
+      // Auto-add both players as friends
+      const creatorUid=gData.players.white;
+      if(creatorUid && creatorUid!==MP.user.uid){
+        MP.db.collection('users').doc(MP.user.uid).update({
+          friends: firebase.firestore.FieldValue.arrayUnion(creatorUid)
+        }).catch(()=>{});
+        MP.db.collection('users').doc(creatorUid).update({
+          friends: firebase.firestore.FieldValue.arrayUnion(MP.user.uid)
+        }).catch(()=>{});
+      }
 
       MP.game.startOnline(gDoc.id);
     },
