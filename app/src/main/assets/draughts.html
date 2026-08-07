@@ -2819,6 +2819,7 @@ const Game = {
       if(caps.length && !caps.some(m=>m.from===idx)) return false;
     }
     this.selected=idx;
+    this.update();
     const mv=this.legal.filter(m=>m.from===this.selected);
     if(!mv.length) return false;
     const ghost=$('#ghost');
