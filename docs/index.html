@@ -7,6 +7,8 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Tanzanian Draft</title>
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
 <style>
 /* ============================================
    THEME TOKENS & RESET
@@ -263,6 +265,11 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
 }
 @media(max-width:480px){
   :root{ --cell: min(calc((100dvh - 110px) / 8), calc((100vw - 20px) / 8)); }
+  .mp-room-code{ font-size:2.2rem; letter-spacing:.2em; padding:16px !important; }
+  .mp-room-input{ font-size:1.2rem; padding:12px 14px; }
+  .mp-friend-item{ padding:10px 10px; gap:8px; }
+  .mp-friend-action{ padding:5px 10px; font-size:.75rem; }
+  .mp-friends-wrap{ max-height:55vh; }
 }
 
 /* Utility */
@@ -372,30 +379,31 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
 .mp-cancel-btn{ margin-top:12px; background:none; border:1px solid rgba(255,255,255,.2); color:inherit; padding:10px 24px; border-radius:10px; cursor:pointer; }
 
 /* Room code */
-.mp-room-code{ font-size:3rem; font-weight:800; letter-spacing:.3em; font-family:'Courier New',monospace; }
+.mp-room-code{ font-size:3rem; font-weight:800; letter-spacing:.3em; font-family:'Courier New',monospace; word-break:break-all; }
 .mp-room-input{
   background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
   border-radius:12px; padding:14px 18px; color:inherit; font-size:1.4rem;
   font-family:'Courier New',monospace; letter-spacing:.2em; text-align:center;
-  width:min(280px,80vw); outline:none;
+  width:100%; max-width:320px; outline:none; box-sizing:border-box;
 }
 .mp-room-input:focus{ border-color:var(--accent,#00e5ff); }
 .mp-room-input::placeholder{ opacity:.3; letter-spacing:.1em; font-size:1rem; }
 
 /* Friends list */
-.mp-friends-wrap{ width:min(420px,92vw); max-height:60vh; overflow-y:auto; }
+.mp-friends-wrap{ width:100%; max-width:420px; max-height:60vh; overflow-y:auto; }
 .mp-friend-item{
-  display:flex; align-items:center; gap:12px; padding:12px 16px;
-  border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex; align-items:center; gap:10px; padding:12px 14px;
+  border-bottom:1px solid rgba(255,255,255,.06); flex-wrap:wrap;
 }
-.mp-friend-name{ flex:1; font-weight:500; }
-.mp-friend-elo{ font-size:.8rem; opacity:.4; }
+.mp-friend-name{ flex:1; min-width:80px; font-weight:500; font-size:.9rem; }
+.mp-friend-elo{ font-size:.75rem; opacity:.4; }
 .mp-friend-status{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .mp-friend-status.online{ background:#4caf50; }
 .mp-friend-status.offline{ background:#666; }
 .mp-friend-action{
   background:rgba(0,229,255,.15); color:var(--accent,#00e5ff); border:none;
-  padding:6px 14px; border-radius:8px; font-size:.82rem; font-weight:600; cursor:pointer;
+  padding:6px 12px; border-radius:8px; font-size:.8rem; font-weight:600; cursor:pointer;
+  white-space:nowrap;
 }
 .mp-friend-action.challenge{ background:rgba(76,175,80,.2); color:#4caf50; }
 .mp-friend-action.decline{ background:rgba(244,67,54,.15); color:#f44336; }
@@ -404,6 +412,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
 .mp-search-input{
   flex:1; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
   border-radius:10px; padding:10px 14px; color:inherit; font-size:.9rem; outline:none;
+  width:100%; box-sizing:border-box;
 }
 .mp-search-input:focus{ border-color:var(--accent,#00e5ff); }
 
@@ -569,13 +578,14 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <div id="config-screen" class="screen">
     <h2 class="main-title" style="font-size:1.8rem;">New Game</h2>
       <div class="glass" style="width:min(420px,92vw); padding:22px; display:flex; flex-direction:column; gap:14px;">
-        <div style="font-size:.75rem; opacity:.5; letter-spacing:.1em; text-transform:uppercase;">Tanzanian Draft</div>
+        <div style="font-size:.75rem; opacity:.5; letter-spacing:.1em; text-transform:uppercase;">Tanzanian Draft Rules</div>
         <ul style="margin:0; padding-left:1.2em; font-size:.88rem; line-height:1.65; opacity:.85;">
           <li>Captures are mandatory</li>
-          <li>Must take the maximum number of pieces</li>
-          <li>Kings fly (any distance on the diagonal)</li>
+          <li>Any legal capture route may be chosen (no max-capture rule)</li>
+          <li>Once a capture starts, the full chain must be completed</li>
+          <li>Flying kings — step-by-step landing after each capture</li>
           <li>Men cannot capture backward</li>
-          <li>Reaching the king row ends your turn</li>
+          <li>Promotion (reaching king row) ends your turn immediately</li>
         </ul>
         <label class="block">Mode
           <select id="cfg-mode"><option value="pvc">Human vs Computer</option><option value="hvh">Human vs Human</option><option value="ava">AI vs AI</option></select>
@@ -642,7 +652,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
           <div id="ai-thinker"><div class="thinking-text">Thinking<div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div id="ai-info"></div></div>
         </div>
         <div id="controls" style="margin-top:14px; display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; position:relative;">
-          <button class="btn ghost" style="padding:8px 12px; font-size:.8rem;" onclick="Game.hint()" title="Hint">&#128161; <span data-i18n="game.hint">Dokezo</span></button>
+          <button class="btn ghost" style="padding:8px 12px; font-size:.8rem;" onclick="Game.hint()" title="Hint">&#128161; <span data-i18n="game.hint">Dokezo</span> <span id="hint-count" style="opacity:.5; font-size:.75rem;"></span></button>
           <button id="btn-undo" class="btn ghost" style="padding:8px 12px; font-size:.8rem; display:none;" onclick="Game.undo()" title="Undo">&#8630; <span data-i18n="game.undo">Rudia</span></button>
           <button class="btn ghost" style="padding:8px 12px; font-size:.8rem;" onclick="Game.rotateBoard()" title="Rotate">&#128260; <span data-i18n="game.rotate">Geuza</span></button>
           <button class="btn ghost chat-toggle" style="padding:8px 12px; font-size:.8rem;" onclick="Chat.toggle()">&#128172; <span data-i18n="game.chat">Chat</span><span id="chat-badge" class="chat-badge">0</span></button>
@@ -750,6 +760,25 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
     </div>
   </div>
 
+  <div class="modal" id="modal-rules">
+    <div class="modal-panel glass">
+      <div class="modal-title">Tanzanian Draft Rules</div>
+      <div class="scroll" style="max-height:60vh; line-height:1.6; font-size:.92rem; opacity:.9;">
+        <p><strong>Captures are mandatory</strong> — if you can capture, you must.</p>
+        <p><strong>Any legal capture route</strong> may be chosen. There is no max-capture rule.</p>
+        <p><strong>Once a capture starts</strong>, the full chain must be completed.</p>
+        <p><strong>Flying kings</strong> — kings move any distance diagonally, landing step-by-step after each capture.</p>
+        <p><strong>Men cannot capture backward.</strong></p>
+        <p><strong>Promotion</strong> — when a man reaches the king row, the turn ends immediately. The newly promoted king does NOT continue capturing.</p>
+        <p style="margin-top:12px; opacity:.6; font-size:.82rem;">Version 1.5 — Grandmaster Rules</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn ghost" onclick="App.closeModal('rules')">Cancel</button>
+        <button class="btn" onclick="App.closeModal('rules'); App._startGameAfterRules()">Play</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="modal-over">
     <div class="modal-panel glass" style="text-align:center;">
       <div class="modal-title" id="over-title" data-i18n="over.victory">Victory!</div>
@@ -765,7 +794,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <div class="modal" id="modal-about">
     <div class="modal-panel glass" style="text-align:center;">
       <div style="font-size:4rem; line-height:1; margin-bottom:8px;">&#9823;</div>
-      <div class="modal-title">TZ-Draft v1.3</div>
+      <div class="modal-title">TZ-Draft v2.0</div>
       <div style="opacity:.7; margin-top:4px;" data-i18n="about.subtitle">Tanzanian Draft</div>
       <div style="margin-top:20px; display:flex; flex-direction:column; gap:12px; font-size:.95rem;">
         <div>
@@ -900,15 +929,14 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
         <div class="mp-avatar" id="mp-avatar" style="width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:1.4rem; border:2px solid rgba(255,255,255,.15);"></div>
         <div style="text-align:left;">
           <div style="display:flex; align-items:center; gap:6px; font-weight:700; font-size:1.1rem;" id="mp-lobby-name">Guest</div>
-          <div style="opacity:.5; font-size:.8rem;" id="mp-lobby-level">Level 1 \u00b7 <span id="mp-lobby-elo">ELO 1200</span></div>
+          <div style="opacity:.5; font-size:.8rem;" id="mp-lobby-level">Level 1 \u00b7 <span id="mp-lobby-elo">Rating 1200</span></div>
         </div>
       </div>
     </div>
     <div class="menu-grid">
       <button class="btn" onclick="MP.matchmaking.startRandom()"><span class="btn-icon">&#127760;</span> <span data-i18n="lobby.random">Cheza Online</span></button>
-      <button class="btn ghost" onclick="MP.room.showCreate()"><span class="btn-icon">&#128279;</span> <span data-i18n="lobby.create">Alika Rafiki</span></button>
-      <button class="btn ghost" onclick="MP.room.showJoin()"><span class="btn-icon">&#128221;</span> <span data-i18n="lobby.join">Jiunga kwa Nambari</span></button>
       <button class="btn ghost" onclick="MP.friends.show()"><span class="btn-icon">&#128101;</span> <span data-i18n="lobby.friends">Marafiki</span> <span id="mp-friends-count" style="opacity:.5; font-size:.8rem; margin-left:auto;"></span></button>
+      <button class="btn ghost" onclick="MP.room.showPlayWithFriend()"><span class="btn-icon">&#128279;</span> <span data-i18n="lobby.create">Cheza na Rafiki</span></button>
       <button class="btn ghost" onclick="App.showScreen('menu-screen')"><span class="btn-icon">&#127918;</span> <span data-i18n="lobby.offline">Cheza Offline</span></button>
     </div>
     <div style="display:flex; gap:8px; margin-top:6px;">
@@ -921,19 +949,34 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <div id="match-overlay" class="mp-match-overlay">
     <div class="mp-spinner"></div>
     <div class="mp-match-text" id="mp-match-text">Searching for opponent...</div>
-    <div class="mp-match-sub" id="mp-match-sub">ELO range: ±200</div>
+    <div class="mp-match-sub" id="mp-match-sub">Rating range: ±200</div>
     <button class="mp-cancel-btn" onclick="MP.matchmaking.cancel()">Cancel</button>
   </div>
 
   <!-- ==================== INVITE SCREEN ==================== -->
-  <div id="room-screen" class="screen">
-    <div class="mp-title" id="mp-room-title">Invite Player</div>
-    <div class="mp-subtitle" id="mp-room-subtitle">Share this code with your friend</div>
-    <div class="mp-room-code glass" id="mp-room-code" style="padding:20px 40px; display:none;">------</div>
-    <div id="mp-room-join-area" style="display:none; width:min(320px,85vw); flex-direction:column; gap:12px; align-items:center;">
-      <input class="mp-room-input" id="mp-room-input" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code" autocomplete="off">
-      <button class="btn" onclick="MP.room.join()" style="width:100%;">Join Game</button>
+  <div id="room-screen" class="screen" style="justify-content:flex-start; padding-top:40px;">
+    <div class="mp-title" id="mp-room-title">Cheza na Rafiki</div>
+    <div class="mp-subtitle" id="mp-room-subtitle">Create a room or join with a code</div>
+
+    <!-- Create room section -->
+    <div id="mp-room-create-area" style="width:100%; max-width:360px; padding:0 16px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; gap:12px;">
+      <div class="mp-room-code glass" id="mp-room-code" style="padding:20px 30px; display:none;">------</div>
+      <div id="mp-room-waiting" style="display:none; text-align:center; opacity:.6; font-size:.9rem;">Waiting for opponent to join...</div>
+      <button class="btn" id="mp-room-create-btn" onclick="MP.room.showCreate()" style="width:100%;">Create Room & Share Code</button>
     </div>
+
+    <div style="width:100%; max-width:360px; padding:0 16px; box-sizing:border-box; margin-top:16px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <div style="flex:1; height:1px; background:rgba(255,255,255,.1);"></div>
+        <div style="font-size:.8rem; opacity:.4;">OR</div>
+        <div style="flex:1; height:1px; background:rgba(255,255,255,.1);"></div>
+      </div>
+      <div id="mp-room-join-area" style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+        <input class="mp-room-input" id="mp-room-input" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code" autocomplete="off">
+        <button class="btn ghost" onclick="MP.room.join()" style="width:100%;">Join Game</button>
+      </div>
+    </div>
+
     <div style="display:flex; gap:10px; margin-top:16px;">
       <button class="btn ghost" onclick="MP.room.cancel(); App.showScreen('lobby-screen')">Back</button>
     </div>
@@ -942,7 +985,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
   <!-- ==================== FRIENDS SCREEN ==================== -->
   <div id="friends-screen" class="screen">
     <div class="mp-title">Friends</div>
-    <div style="width:min(420px,92vw);">
+    <div style="width:100%; max-width:420px; padding:0 16px; box-sizing:border-box;">
       <div class="mp-search-wrap">
         <input class="mp-search-input" id="mp-friend-search" placeholder="Search by name..." oninput="MP.friends.search(this.value)">
       </div>
@@ -1123,10 +1166,8 @@ const LANG_DATA = {
     // Lobby
     'lobby.random': 'Random Match',
     'lobby.random.desc': 'Find an opponent online',
-    'lobby.create': 'Invite Player',
-    'lobby.create.desc': 'Get a code to share with a friend',
-    'lobby.join': 'Join by Code',
-    'lobby.join.desc': 'Enter a friend\'s code',
+    'lobby.create': 'Play with Friend',
+    'lobby.create.desc': 'Create a room or join with a code',
     'lobby.friends': 'Friends',
     'lobby.friends.desc': '0 online',
     'lobby.offline': 'Play Offline',
@@ -1154,7 +1195,7 @@ const LANG_DATA = {
     'friends.noFriends': 'No friends yet. Search above!',
     // Matchmaking
     'match.searching': 'Searching for opponent...',
-    'match.range': 'ELO range',
+    'match.range': 'Rating range',
     'match.cancel': 'Cancel',
     // Profile
     'profile.title': 'Profile',
@@ -1292,10 +1333,8 @@ const LANG_DATA = {
     'profile.createBtn': 'Unda Wasifu & Cheza',
     'lobby.random': 'Cheza Online',
     'lobby.random.desc': 'Tafuta mtu wa kukucheza',
-    'lobby.create': 'Alika Rafiki',
-    'lobby.create.desc': 'Pata nambari ya kumshirikisha rafiki',
-    'lobby.join': 'Jiunga kwa Nambari',
-    'lobby.join.desc': 'Weka nambari ya rafiki yako',
+    'lobby.create': 'Cheza na Rafiki',
+    'lobby.create.desc': 'Fumba chumba au jiunga kwa nambari',
     'lobby.friends': 'Marafiki',
     'lobby.friends.desc': '0 wameingia',
     'lobby.offline': 'Cheza Offline',
@@ -1320,7 +1359,7 @@ const LANG_DATA = {
     'friends.noResults': 'Hakuna mtu aliyeonekana',
     'friends.noFriends': 'Hakuna marafiki bado. Tafuta hapo juu!',
     'match.searching': 'Inatafuta mtu wa kukucheza...',
-    'match.range': 'ELO',
+    'match.range': 'Rating',
     'match.cancel': 'Ghairi',
     'profile.title': 'Profile',
     'profile.games': 'Michezo',
@@ -1420,7 +1459,7 @@ try{ Settings.init(); }catch(e){}
 const Stats = {
   data: (()=>{ try{ return JSON.parse(lsGet('dc_stats')||'{}'); }catch(e){} return {}; })(),
   ensure(){
-    const base = {games:0,wins:0,losses:0,draws:0,totalMoves:0,totalTime:0,bestTime:null};
+    const base = {games:0,wins:0,losses:0,draws:0,totalMoves:0,totalTime:0,bestTime:null,hints:3};
     this.data = { ...base, ...this.data };
     this.save();
   },
@@ -1430,7 +1469,12 @@ const Stats = {
     this.data.games++;
     this.data.totalMoves += moves;
     this.data.totalTime += seconds;
-    if(result==='win') this.data.wins++;
+    if(result==='win'){
+      // Only award hints for beating humans (not AI)
+      const isOnlineHuman = this.mode==='online' || this.mode==='hvh';
+      if(isOnlineHuman) this.data.hints=(this.data.hints||0)+1;
+      this.data.wins++;
+    }
     if(result==='loss') this.data.losses++;
     if(result==='draw') this.data.draws++;
     if(result==='win' && (this.data.bestTime===null || seconds < this.data.bestTime)) this.data.bestTime = seconds;
@@ -1614,7 +1658,7 @@ class State{
 }
 
 /* =========================================================
-   GRANDMASTER DRAUGHTS RULES v1.3 (Tanzanian)
+   GRANDMASTER DRAUGHTS RULES v1.4 (Tanzanian)
    ---------------------------------------------------------
    - No maximum capture priority: any legal capture route may be chosen.
    - Mandatory capture: once a capture path starts, the full chain must be completed.
@@ -2777,6 +2821,7 @@ const Game = {
       if(caps.length && !caps.some(m=>m.from===idx)) return false;
     }
     this.selected=idx;
+    this.update();
     const mv=this.legal.filter(m=>m.from===this.selected);
     if(!mv.length) return false;
     const ghost=$('#ghost');
@@ -3034,6 +3079,11 @@ const Game = {
     this.state.board.set(data.board);
     this.state.turn=data.turn; this.state.halfmoveClock=data.halfmoveClock; this.state.history=[...data.history];
     this.lastMove=data.lastMove||null;
+    this.mode=data.mode||'pvc';
+    this.rules = new Rules({
+      flyingKings: true, maxCaptureRule: false, mandatoryCapture: true,
+      backwardCaptureMen: false, promotionEndsTurn: true, size: data.size
+    });
     // Restore repetition map
     this.state.rep.clear();
     if(data.rep){
@@ -3049,11 +3099,45 @@ const Game = {
   },
 
   hint(){
-    const turn=this.state.turn;
+    // Check if hints are available
+    if(MP.user && MP.db){
+      // Online: check Firestore
+      MP.db.collection('userStats').doc(MP.user.uid).get().then(snap=>{
+        const d=snap.data()||{};
+        const hints=d.hints||0;
+        if(hints<=0){ alert('No hints left! Win a game to earn a hint.'); return; }
+        this._useHint();
+        MP.db.collection('userStats').doc(MP.user.uid).update({hints:firebase.firestore.FieldValue.increment(-1)}).catch(()=>{});
+      }).catch(()=>{ alert('Could not check hints. Try again.'); });
+    }else{
+      // Offline: check localStorage
+      Stats.ensure();
+      const hints=Stats.data.hints||0;
+      if(hints<=0){ alert('No hints left! Win a game to earn a hint.'); return; }
+      this._useHint();
+      Stats.data.hints=Math.max(0,hints-1);
+      Stats.save();
+    }
+  },
+  _useHint(){
     const ai = new AI('expert');
     const mv = ai.pickMove(this.state.clone(), this.rules);
     if(!mv) return;
     Renderer.highlightHint(mv.from, mv.to);
+    this.updateHintCount();
+  },
+  updateHintCount(){
+    const el=$('#hint-count');
+    if(!el) return;
+    if(MP.user && MP.db){
+      MP.db.collection('userStats').doc(MP.user.uid).get().then(snap=>{
+        const d=snap.data()||{};
+        el.textContent='('+((d.hints)||0)+')';
+      }).catch(()=>{ el.textContent=''; });
+    }else{
+      Stats.ensure();
+      el.textContent='('+((Stats.data.hints)||0)+')';
+    }
   },
   resign(){
     if(this.mode==='online' && MP.user){
@@ -3083,7 +3167,7 @@ const Game = {
     if(!confirm('Load saved game? Current progress will be lost.')) return;
     this.restore(data);
     this.past=[]; this.selected=null; this.jumping=null; this.capturedPieces=[];
-    Renderer.init(data.size); this.update(); this.startTimer(); App.showScreen('game-screen');
+    Renderer.init(data.size); this.update(); this.startTimer(); App.showScreen('game-screen'); this.updateHintCount();
   },
   renderSaves(){
     const el=$('#saves-list');
@@ -3126,7 +3210,7 @@ const App = {
     if(id==='stats') Stats.render();
     if(id==='load') Game.renderSaves();
   },
-  closeModal(id){ $(`#modal-${id}`).classList.remove('active'); },
+  closeModal(id){ const el=$(`#modal-${id}`); if(el) el.classList.remove('active'); },
 
   startConfig(mode){
     $('#cfg-mode').value=mode;
@@ -3135,6 +3219,10 @@ const App = {
   },
 
   startGame(){
+    this.showModal('rules');
+  },
+
+  _startGameAfterRules(){
     const cfg={
       mode: $('#cfg-mode').value,
       difficulty: $('#cfg-difficulty').value,
@@ -3144,6 +3232,7 @@ const App = {
     Settings.set('difficulty', cfg.difficulty);
     Game.newGame(cfg);
     this.showScreen('game-screen');
+    Game.updateHintCount();
   },
 
   pauseToMenu(){ Chat.stopListening(); this.showScreen('menu-screen'); },
@@ -3326,7 +3415,7 @@ const Chat = {
 const MP = {
   db: null, auth: null, user: null, unsub: null,
   currentGameId: null, myColor: null, opponent: null,
-  _unsubGame: null, _challengeData: null,
+  _unsubGame: null, _challengeData: null, _lastGameOverId: null,
   _friendSearchTimeout: null, _myFriends: [], _myPending: [], _unsubChallengeGame: null,
   _friendProfileCache: {},
 
@@ -3673,7 +3762,7 @@ const MP = {
       // 1. Update gamesPlayed/wins/losses/draws FIRST
       const statsUpdate={};
       statsUpdate.gamesPlayed = firebase.firestore.FieldValue.increment(1);
-      if(result==='win') statsUpdate.wins = firebase.firestore.FieldValue.increment(1);
+      if(result==='win'){ statsUpdate.wins = firebase.firestore.FieldValue.increment(1); statsUpdate.hints = firebase.firestore.FieldValue.increment(1); }
       else if(result==='loss') statsUpdate.losses = firebase.firestore.FieldValue.increment(1);
       else statsUpdate.draws = firebase.firestore.FieldValue.increment(1);
       await ref.set(statsUpdate,{merge:true}).catch(()=>{});
@@ -3780,7 +3869,7 @@ const MP = {
       const uSnap=await MP.db.collection('users').doc(MP.user.uid).get();
       const sSnap=await MP.db.collection('userStats').doc(MP.user.uid).get();
       const u=uSnap.exists?uSnap.data():{};
-      const s=sSnap.exists?sSnap.data():{totalStars:0,level:1,starsInLevel:0,wins:0,losses:0,draws:0,gamesPlayed:0};
+      const s=sSnap.exists?sSnap.data():{totalStars:0,level:1,starsInLevel:0,wins:0,losses:0,draws:0,gamesPlayed:0,hints:3};
       const totalStars=s.totalStars||0;
       const lv=s.level||1;
       const needed=MP.stars.starsForLevel(lv);
@@ -3965,10 +4054,11 @@ const MP = {
       });
       this.db = firebase.firestore();
       this.fbAuth = firebase.auth();
-      this.fbAuth.onAuthStateChanged(u=>{
+      this.fbAuth.onAuthStateChanged(async u=>{
         if(u){
           this.user=u;
-          this._ensureUserDoc(u);
+          if(this._creatingProfile) return;
+          await this._ensureUserDoc(u);
           this._enterLobby();
         } else {
           App.showScreen('menu-screen');
@@ -3990,18 +4080,35 @@ const MP = {
         online: true,
         lastSeen: Date.now()
       });
+      this.user.displayName=u.displayName||'Guest';
+      this.user.photoURL=u.photoURL||'';
       MP._friendProfileCache[u.uid]={displayName:u.displayName||'Guest',photoURL:u.photoURL||'',elo:1200,friends:[],pendingRequests:[],online:true};
       // Initialize progression stats
       MP.db.collection('userStats').doc(u.uid).set({
         totalStars:0, level:1, starsInLevel:0,
-        wins:0, losses:0, draws:0, gamesPlayed:0,
+        wins:0, losses:0, draws:0, gamesPlayed:0, hints:3,
         equipped:{title:null,board:null,pieces:null,border:null,avatar:null},
-        unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:[],pieces:[],borders:[],avatars:[]}},
+        unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']}},
         achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
       },{merge:true}).catch(()=>{});
     }else{
       await ref.update({online:true, lastSeen:Date.now()});
+      this.user.displayName=snap.data().displayName||'Guest';
+      this.user.photoURL=snap.data().photoURL||'';
       MP._friendProfileCache[u.uid]=snap.data();
+      // Backfill default cosmetics for existing users
+      const uStats=await MP.db.collection('userStats').doc(u.uid).get().catch(()=>null);
+      if(uStats&&uStats.exists){
+        const sd=uStats.data()||{};
+        const eq=sd.unlocked||{};
+        const cos=eq.cosmetics||{};
+        let needsUpdate=false;
+        for(const[cat,defId]of[['boards','wood'],['pieces','classic'],['borders','none'],['avatars','default']]){
+          const arr=cos[cat]||[];
+          if(!arr.includes(defId)){ cos[cat]=[defId,...arr]; needsUpdate=true; }
+        }
+        if(needsUpdate) MP.db.collection('userStats').doc(u.uid).set({unlocked:{cosmetics:cos}},{merge:true}).catch(()=>{});
+      }
     }
   },
 
@@ -4042,9 +4149,9 @@ const MP = {
     const lv=sData.level||1;
     const equippedTitle=(sData.equipped||{}).title;
     const titleName=equippedTitle?MP.titles.getName(equippedTitle,currentLang):'';
-    $('#mp-lobby-elo').textContent=`ELO ${elo}`;
+    $('#mp-lobby-elo').textContent=`Rating ${elo}`;
     const lvEl=$('#mp-lobby-level');
-    if(lvEl) lvEl.innerHTML=`Level ${lv}${titleName?' \u00b7 '+titleName:''} \u00b7 <span id="mp-lobby-elo">ELO ${elo}</span>`;
+    if(lvEl) lvEl.innerHTML=`Level ${lv}${titleName?' \u00b7 '+titleName:''} \u00b7 <span id="mp-lobby-elo">Rating ${elo}</span>`;
   },
 
   /* ---- AUTH ---- */
@@ -4069,8 +4176,14 @@ const MP = {
       }
 
       try{
-        const result=await firebase.auth().signInAnonymously();
-        MP.user=result.user;
+        if(MP._creatingProfile) return;
+        MP._creatingProfile=true;
+        if(!MP.user){
+          const result=await firebase.auth().signInAnonymously();
+          MP.user=result.user;
+        }
+        MP.user.displayName=name;
+        MP.user.photoURL='';
 
         const profileData={
           displayName:name,
@@ -4087,19 +4200,21 @@ const MP = {
           createdAt:Date.now()
         };
 
-        await MP.db.collection('users').doc(result.user.uid).set(profileData);
+        await MP.db.collection('users').doc(MP.user.uid).set(profileData);
         // Initialize progression stats
-        await MP.db.collection('userStats').doc(result.user.uid).set({
+        await MP.db.collection('userStats').doc(MP.user.uid).set({
           totalStars:0, level:1, starsInLevel:0,
           wins:0, losses:0, draws:0, gamesPlayed:0,
           equipped:{title:null,board:null,pieces:null,border:null,avatar:null},
-          unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:[],pieces:[],borders:[],avatars:[]}},
+          unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']}},
           achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
         });
         MP._enterLobby();
       }catch(e){
         console.error('Profile creation error:',e);
         alert('Failed to create profile: '+e.message);
+      }finally{
+        MP._creatingProfile=false;
       }
     },
     async signOut(){
@@ -4123,7 +4238,7 @@ const MP = {
       const overlay=$('#match-overlay');
       overlay.classList.add('active');
       $('#mp-match-text').textContent='Searching for opponent...';
-      $('#mp-match-sub').textContent='ELO range: ±200';
+      $('#mp-match-sub').textContent='Rating range: ±200';
 
       const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
       this._myElo=(myDoc.data()||{}).elo||1200;
@@ -4159,7 +4274,14 @@ const MP = {
             if(match){
               // Match found! Create game
               this._cleanup();
+              // Delete own queue entry FIRST to prevent other player from matching us
               await qRef.delete().catch(()=>{});
+
+              // Verify opponent is still waiting (prevents double-match race)
+              const oppQueue=await MP.db.collection('matchmaking').doc(match.id).get().catch(()=>null);
+              if(!oppQueue||!oppQueue.exists||oppQueue.data().status!=='waiting'){
+                return; // Opponent already matched, bail out
+              }
 
               const oppSnap=await MP.db.collection('users').doc(match.id).get();
               const oppData=oppSnap.data()||{};
@@ -4180,7 +4302,9 @@ const MP = {
                 status: 'playing',
                 moves: [],
                 createdAt: Date.now(),
-                mode: 'random'
+                mode: 'random',
+                lastUpdatedBy: MP.user.uid,
+                version: 0
               });
 
               // Delete other player's queue entry
@@ -4195,7 +4319,7 @@ const MP = {
             }else{
               // Expand range every 5 seconds if no match
               range=Math.min(range+100, 800);
-              $('#mp-match-sub').textContent=`ELO range: ±${range}`;
+              $('#mp-match-sub').textContent=`Rating range: ±${range}`;
             }
           }catch(e){ console.error('Match error:',e); }
         });
@@ -4223,11 +4347,18 @@ const MP = {
   room:{
     _waiting: null,
 
-    showCreate(){
+    showPlayWithFriend(){
       App.showScreen('room-screen');
-      $('#mp-room-title').textContent='Invite Player';
-      $('#mp-room-subtitle').textContent='Share this code with your friend';
-      $('#mp-room-code').style.display='block';
+      $('#mp-room-title').textContent='Cheza na Rafiki';
+      $('#mp-room-subtitle').textContent='Create a room or join with a code';
+      $('#mp-room-code').style.display='none';
+      $('#mp-room-waiting').style.display='none';
+      $('#mp-room-create-btn').style.display='';
+      $('#mp-room-join-area').style.display='flex';
+    },
+
+    showCreate(){
+      $('#mp-room-create-btn').style.display='none';
       $('#mp-room-join-area').style.display='none';
       this._createRoom();
     },
@@ -4235,6 +4366,8 @@ const MP = {
     async _createRoom(){
       const code=String(Math.floor(100000+Math.random()*900000));
       $('#mp-room-code').textContent=code;
+      $('#mp-room-code').style.display='block';
+      $('#mp-room-waiting').style.display='block';
 
       if(!MP.user) return;
       const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
@@ -4246,7 +4379,9 @@ const MP = {
         elo:{white:myData.elo||1200, black:0},
         board:null, turn:'white', status:'waiting',
         moves:[], createdAt:Date.now(), mode:'room',
-        roomCode:code
+        roomCode:code,
+        lastUpdatedBy: MP.user.uid,
+        version: 0
       });
 
       MP.currentGameId=gRef.id;
@@ -4263,14 +4398,6 @@ const MP = {
       });
     },
 
-    showJoin(){
-      App.showScreen('room-screen');
-      $('#mp-room-title').textContent='Join by Code';
-      $('#mp-room-subtitle').textContent='Enter your friend\'s 6-digit code';
-      $('#mp-room-code').style.display='none';
-      $('#mp-room-join-area').style.display='flex';
-    },
-
     async join(){
       const code=$('#mp-room-input').value.trim();
       if(code.length!==6 || !/^\d+$/.test(code)){
@@ -4279,31 +4406,56 @@ const MP = {
       }
       if(!MP.user) return;
 
-      const snap=await MP.db.collection('games')
-        .where('roomCode','==',code).where('status','==','waiting').limit(1).get();
+      try{
+        const snap=await MP.db.collection('games')
+          .where('roomCode','==',code).limit(5).get();
 
-      if(snap.empty){
-        alert('Room not found. Check the code and try again.');
-        return;
+        let gDoc=null;
+        snap.forEach(doc=>{
+          const d=doc.data();
+          if(d.status==='waiting' && !gDoc) gDoc=doc;
+        });
+
+        if(!gDoc){
+          alert('Room not found. Check the code and try again.');
+          return;
+        }
+        const gData=gDoc.data();
+        if(gData.status!=='waiting'){
+          alert('This room is already full or no longer available.');
+          return;
+        }
+        const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
+        const myData=myDoc.data()||{};
+
+        await MP.db.collection('games').doc(gDoc.id).update({
+          'players.black': MP.user.uid,
+          'names.black': MP.user.displayName||'Guest',
+          'elo.black': myData.elo||1200,
+          status:'playing',
+          lastUpdatedBy: MP.user.uid
+        });
+
+        MP.myColor='black';
+        MP.opponent={uid:gData.players.white, name:gData.names.white, elo:gData.elo.white};
+        MP.currentGameId=gDoc.id;
+
+        // Auto-add both players as friends
+        const creatorUid=gData.players.white;
+        if(creatorUid && creatorUid!==MP.user.uid){
+          MP.db.collection('users').doc(MP.user.uid).update({
+            friends: firebase.firestore.FieldValue.arrayUnion(creatorUid)
+          }).catch(()=>{});
+          MP.db.collection('users').doc(creatorUid).update({
+            friends: firebase.firestore.FieldValue.arrayUnion(MP.user.uid)
+          }).catch(()=>{});
+        }
+
+        MP.game.startOnline(gDoc.id);
+      }catch(e){
+        console.error('Join room error:',e);
+        alert('Failed to join room. Please try again.');
       }
-
-      const gDoc=snap.docs[0];
-      const gData=gDoc.data();
-      const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
-      const myData=myDoc.data()||{};
-
-      await MP.db.collection('games').doc(gDoc.id).update({
-        'players.black': MP.user.uid,
-        'names.black': MP.user.displayName||'Guest',
-        'elo.black': myData.elo||1200,
-        status:'playing'
-      });
-
-      MP.myColor='black';
-      MP.opponent={uid:gData.players.white, name:gData.names.white, elo:gData.elo.white};
-      MP.currentGameId=gDoc.id;
-
-      MP.game.startOnline(gDoc.id);
     },
 
     cancel(){
@@ -4344,7 +4496,7 @@ const MP = {
           if(d.activeChallenge){
             const ch=d.activeChallenge;
             MP._challengeData=ch;
-            $('#mp-challenge-text').textContent=`${ch.fromName} (ELO ${ch.fromElo}) challenges you!`;
+            $('#mp-challenge-text').textContent=`${ch.fromName} (Rating ${ch.fromElo}) challenges you!`;
             $('#mp-challenge-toast').classList.add('active');
           }else{
             $('#mp-challenge-toast').classList.remove('active');
@@ -4381,7 +4533,7 @@ const MP = {
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${fd.online?'online':'offline'}"></div>
             <div class="mp-friend-name">${fd.displayName||'User'}</div>
-            <div class="mp-friend-elo">${fd.elo||1200}</div>
+            <div class="mp-friend-elo">Rating ${fd.elo||1200}</div>
             <button class="mp-friend-action" onclick="MP.friends.accept('${fid}')">Accept</button>
             <button class="mp-friend-action decline" onclick="MP.friends.decline('${fid}')">Decline</button>
           </div>`;
@@ -4399,7 +4551,7 @@ const MP = {
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${fd.online?'online':'offline'}"></div>
             <div class="mp-friend-name">${fd.displayName||'User'}</div>
-            <div class="mp-friend-elo">${fd.elo||1200}</div>
+            <div class="mp-friend-elo">Rating ${fd.elo||1200}</div>
             ${fd.online?`<button class="mp-friend-action challenge" onclick="MP.friends.challenge('${fid}','${fd.displayName||'User'}',${fd.elo||1200})">Challenge</button>`:''}
           </div>`;
         }
@@ -4435,7 +4587,7 @@ const MP = {
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${d.online?'online':'offline'}"></div>
             <div class="mp-friend-name">${d.displayName||'User'}</div>
-            <div class="mp-friend-elo">${d.elo||1200}</div>
+            <div class="mp-friend-elo">Rating ${d.elo||1200}</div>
             ${btn}
           </div>`;
         });
@@ -4505,7 +4657,8 @@ const MP = {
         names:{white:MP.user.displayName||'Guest', black:friendName},
         elo:{white:myData.elo||1200, black:friendElo},
         board:null, turn:'white', status:'challenge',
-        moves:[], createdAt:Date.now(), mode:'friend'
+        moves:[], createdAt:Date.now(), mode:'friend',
+        lastUpdatedBy: MP.user.uid, version: 0
       });
 
       // Send challenge notification to friend
@@ -4552,7 +4705,8 @@ const MP = {
       const myData=myDoc.data()||{};
 
       await MP.db.collection('games').doc(ch.gameId).update({
-        status:'playing'
+        status:'playing',
+        lastUpdatedBy: MP.user.uid
       });
 
       MP.myColor='black';
@@ -4573,20 +4727,26 @@ const MP = {
   /* ---- GAME SYNC ---- */
   game:{
     _unsub: null,
+    _lastSentVersion: 0,
 
     startOnline(gameId){
       MP.currentGameId=gameId;
+      MP._lastGameOverId=null;
       Game.newGame({mode:'online', difficulty:'medium', boardSize:8, firstMove:'human'});
       Game.aiWhite=null; Game.aiBlack=null;
       Game.viewSide = MP.myColor==='black' ? 2 : 1;
+      this._lastSentVersion=0;
       // Write initial board to Firestore
       MP.db.collection('games').doc(gameId).update({
         board: Array.from(Game.state.board),
         boardSize: Game.state.size,
         history: [],
-        moves: []
+        moves: [],
+        lastUpdatedBy: MP.user.uid,
+        version: 0
       }).catch(()=>{});
       App.showScreen('game-screen');
+      Game.updateHintCount();
       this._updatePlayerBar();
       Chat.startListening();
       if(MP._unsubGame) MP._unsubGame();
@@ -4599,6 +4759,8 @@ const MP = {
         }
         if(d.status!=='playing') return;
         if(!d.board) return;
+        // Skip self-echo: ignore updates we sent ourselves
+        if(d.lastUpdatedBy===MP.user.uid) return;
         const sz=d.boardSize||8;
         if(d.board && d.board.length===sz*sz){
           const prevSize=Game.state?Game.state.size:0;
@@ -4646,7 +4808,7 @@ const MP = {
         <div class="mp-player-color ${oppSide.toLowerCase()}"></div>
         <div class="mp-player-detail">
           <div class="mp-player-detail-name">${MP.opponent.name} <span class="mp-friend-status online" style="margin-left:6px;"></span></div>
-          <div class="mp-player-detail-elo">ELO ${MP.opponent.elo}</div>
+          <div class="mp-player-detail-elo">Rating ${MP.opponent.elo}</div>
         </div>
         <div class="mp-game-actions">
           ${isFriend?'<span style="font-size:.7rem; opacity:.5;">Friends</span>':`<button class="mp-game-action-btn" onclick="MP.friends.addOpponent()" style="font-size:.7rem; padding:4px 8px;" data-i18n="game.addFriend">Add Friend</button>`}
@@ -4660,6 +4822,7 @@ const MP = {
       if(!MP.currentGameId) return;
       const moveData={from:mv.from, to:mv.to, captures:mv.captures.map(c=>c), notation:Game.notation(mv)};
       const gameRef=MP.db.collection('games').doc(MP.currentGameId);
+      this._lastSentVersion=(this._lastSentVersion||0)+1;
       await gameRef.update({
         board: Array.from(Game.state.board),
         turn: Game.state.turn===COLOR.W?'white':'black',
@@ -4667,25 +4830,33 @@ const MP = {
         history: firebase.firestore.FieldValue.arrayUnion(moveData),
         halfmoveClock: Game.state.halfmoveClock,
         lastMove: {from:mv.from, to:mv.to},
-        boardSize: Game.state.size
+        boardSize: Game.state.size,
+        lastUpdatedBy: MP.user.uid,
+        version: this._lastSentVersion
       });
     },
 
     async sendFullState(){
       if(!MP.currentGameId) return;
       const gameRef=MP.db.collection('games').doc(MP.currentGameId);
+      this._lastSentVersion=(this._lastSentVersion||0)+1;
       await gameRef.update({
         board: Array.from(Game.state.board),
         turn: Game.state.turn===COLOR.W?'white':'black',
         halfmoveClock: Game.state.halfmoveClock,
         history: Game.state.history,
         lastMove: Game.lastMove,
-        boardSize: Game.state.size
+        boardSize: Game.state.size,
+        lastUpdatedBy: MP.user.uid,
+        version: this._lastSentVersion
       });
     },
 
     async _onGameOver(d){
       if(MP._unsubGame){ MP._unsubGame(); MP._unsubGame=null; }
+      // Guard against double-fire from snapshot
+      if(MP._lastGameOverId===MP.currentGameId) return;
+      MP._lastGameOverId=MP.currentGameId;
       const result=d.result||'draw';
       const msg=d.gameOverMsg||'Game ended';
 
@@ -4773,6 +4944,11 @@ const MP = {
       MP.myColor=whiteUid===MP.user.uid?'white':'black';
       MP.opponent={uid:MP.myColor==='white'?blackUid:whiteUid, name:MP.myColor==='white'?blackName:whiteName, elo:MP.myColor==='white'?blackElo:whiteElo};
       
+      await MP.db.collection('games').doc(gameId).update({
+        status:'playing',
+        lastUpdatedBy: MP.user.uid
+      });
+      
       App.closeModal('over');
       MP.game.startOnline(gameId);
     },
@@ -4814,7 +4990,8 @@ const MP = {
         elo:{white:newWhiteElo, black:newBlackElo},
         board:null, turn:'white', status:'waiting',
         moves:[], history:[], createdAt:Date.now(), mode:'rematch',
-        roomCode:gameData.roomCode||null
+        roomCode:gameData.roomCode||null,
+        lastUpdatedBy: MP.user.uid, version: 0
       });
       
       // Notify other player via current game document
@@ -4827,26 +5004,48 @@ const MP = {
       MP.myColor=whiteUid===MP.user.uid?'black':'white';
       MP.opponent={uid:MP.myColor==='white'?blackUid:whiteUid, name:MP.myColor==='white'?blackName:whiteName, elo:MP.myColor==='white'?blackElo:whiteElo};
       
-      // Close modal and start new game
+      // Close modal
       App.closeModal('over');
-      MP.game.startOnline(gRef.id);
+
+      // Wait for opponent to accept (same pattern as challenge())
+      if(MP._unsubChallengeGame) MP._unsubChallengeGame();
+      MP._unsubChallengeGame=MP.db.collection('games').doc(gRef.id).onSnapshot(snap=>{
+        const gd=snap.data();
+        if(gd && gd.status==='playing'){
+          if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
+          MP.game.startOnline(gRef.id);
+        }else if(gd && (gd.status==='finished'||gd.status==='cancelled'||gd.status==='declined')){
+          if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
+        }
+      });
     },
 
     async resign(){
       if(!MP.currentGameId || !MP.user) return;
       if(!confirm('Are you sure you want to resign?')) return;
+      const ref=MP.db.collection('games').doc(MP.currentGameId);
+      const snap=await ref.get();
+      if(snap.exists && snap.data().status==='finished') return;
+      MP._lastGameOverId=MP.currentGameId;
       const winner=MP.myColor==='white'?'black':'white';
-      await MP.db.collection('games').doc(MP.currentGameId).update({
+      await ref.update({
         status:'finished',
         result:winner,
-        gameOverMsg: (MP.user.displayName||'You')+' resigned.'
+        gameOverMsg: (MP.user.displayName||'You')+' resigned.',
+        lastUpdatedBy: MP.user.uid
       });
     },
 
     async sendGameOver(result, msg){
       if(!MP.currentGameId) return;
-      await MP.db.collection('games').doc(MP.currentGameId).update({
-        status:'finished', result:result, gameOverMsg:msg
+      const ref=MP.db.collection('games').doc(MP.currentGameId);
+      const snap=await ref.get();
+      if(snap.exists && snap.data().status==='finished') return;
+      // Mark locally before write to prevent race with opponent's sendGameOver
+      MP._lastGameOverId=MP.currentGameId;
+      await ref.update({
+        status:'finished', result:result, gameOverMsg:msg,
+        lastUpdatedBy: MP.user.uid
       });
     },
 
@@ -5000,7 +5199,7 @@ const MP = {
       const data=JSON.parse(auto);
       const btn=document.createElement('button');
       btn.className='btn ghost'; btn.innerHTML='<span class="btn-icon">&#9658;</span> Continue Last Game';
-      btn.onclick=()=>{ Game.restore(data); Renderer.init(data.size); Game.update(); Game.startTimer(); App.showScreen('game-screen'); };
+      btn.onclick=()=>{ Game.restore(data); Renderer.init(data.size); Game.update(); Game.startTimer(); App.showScreen('game-screen'); Game.updateHintCount(); };
       // Add to lobby screen only
       const lobbyGrid=document.querySelector('#lobby-screen .menu-grid');
       if(lobbyGrid) lobbyGrid.appendChild(btn);
@@ -5017,9 +5216,9 @@ const MP = {
   MP.init();
 
   // Auto-update checker
-  App.CURRENT_VERSION='1.3';
+  App.CURRENT_VERSION='2.1';
   App.UPDATE_URL='https://koolstar03.github.io/tz-draft/version.txt';
-  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/app-debug.apk';
+  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v2.1.apk';
   const verEl=$('#app-ver');
   if(verEl) verEl.textContent='v'+App.CURRENT_VERSION;
   (async()=>{

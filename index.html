@@ -3415,7 +3415,7 @@ const Chat = {
 const MP = {
   db: null, auth: null, user: null, unsub: null,
   currentGameId: null, myColor: null, opponent: null,
-  _unsubGame: null, _challengeData: null,
+  _unsubGame: null, _challengeData: null, _lastGameOverId: null,
   _friendSearchTimeout: null, _myFriends: [], _myPending: [], _unsubChallengeGame: null,
   _friendProfileCache: {},
 
@@ -4057,6 +4057,7 @@ const MP = {
       this.fbAuth.onAuthStateChanged(async u=>{
         if(u){
           this.user=u;
+          if(this._creatingProfile) return;
           await this._ensureUserDoc(u);
           this._enterLobby();
         } else {
@@ -4087,7 +4088,7 @@ const MP = {
         totalStars:0, level:1, starsInLevel:0,
         wins:0, losses:0, draws:0, gamesPlayed:0, hints:3,
         equipped:{title:null,board:null,pieces:null,border:null,avatar:null},
-        unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:[],pieces:[],borders:[],avatars:[]}},
+        unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']}},
         achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
       },{merge:true}).catch(()=>{});
     }else{
@@ -4095,6 +4096,19 @@ const MP = {
       this.user.displayName=snap.data().displayName||'Guest';
       this.user.photoURL=snap.data().photoURL||'';
       MP._friendProfileCache[u.uid]=snap.data();
+      // Backfill default cosmetics for existing users
+      const uStats=await MP.db.collection('userStats').doc(u.uid).get().catch(()=>null);
+      if(uStats&&uStats.exists){
+        const sd=uStats.data()||{};
+        const eq=sd.unlocked||{};
+        const cos=eq.cosmetics||{};
+        let needsUpdate=false;
+        for(const[cat,defId]of[['boards','wood'],['pieces','classic'],['borders','none'],['avatars','default']]){
+          const arr=cos[cat]||[];
+          if(!arr.includes(defId)){ cos[cat]=[defId,...arr]; needsUpdate=true; }
+        }
+        if(needsUpdate) MP.db.collection('userStats').doc(u.uid).set({unlocked:{cosmetics:cos}},{merge:true}).catch(()=>{});
+      }
     }
   },
 
@@ -4162,8 +4176,12 @@ const MP = {
       }
 
       try{
-        const result=await firebase.auth().signInAnonymously();
-        MP.user=result.user;
+        if(MP._creatingProfile) return;
+        MP._creatingProfile=true;
+        if(!MP.user){
+          const result=await firebase.auth().signInAnonymously();
+          MP.user=result.user;
+        }
         MP.user.displayName=name;
         MP.user.photoURL='';
 
@@ -4182,19 +4200,21 @@ const MP = {
           createdAt:Date.now()
         };
 
-        await MP.db.collection('users').doc(result.user.uid).set(profileData);
+        await MP.db.collection('users').doc(MP.user.uid).set(profileData);
         // Initialize progression stats
-        await MP.db.collection('userStats').doc(result.user.uid).set({
+        await MP.db.collection('userStats').doc(MP.user.uid).set({
           totalStars:0, level:1, starsInLevel:0,
           wins:0, losses:0, draws:0, gamesPlayed:0,
           equipped:{title:null,board:null,pieces:null,border:null,avatar:null},
-          unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:[],pieces:[],borders:[],avatars:[]}},
+          unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']}},
           achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
         });
         MP._enterLobby();
       }catch(e){
         console.error('Profile creation error:',e);
         alert('Failed to create profile: '+e.message);
+      }finally{
+        MP._creatingProfile=false;
       }
     },
     async signOut(){
@@ -4254,7 +4274,14 @@ const MP = {
             if(match){
               // Match found! Create game
               this._cleanup();
+              // Delete own queue entry FIRST to prevent other player from matching us
               await qRef.delete().catch(()=>{});
+
+              // Verify opponent is still waiting (prevents double-match race)
+              const oppQueue=await MP.db.collection('matchmaking').doc(match.id).get().catch(()=>null);
+              if(!oppQueue||!oppQueue.exists||oppQueue.data().status!=='waiting'){
+                return; // Opponent already matched, bail out
+              }
 
               const oppSnap=await MP.db.collection('users').doc(match.id).get();
               const oppData=oppSnap.data()||{};
@@ -4704,6 +4731,7 @@ const MP = {
 
     startOnline(gameId){
       MP.currentGameId=gameId;
+      MP._lastGameOverId=null;
       Game.newGame({mode:'online', difficulty:'medium', boardSize:8, firstMove:'human'});
       Game.aiWhite=null; Game.aiBlack=null;
       Game.viewSide = MP.myColor==='black' ? 2 : 1;
@@ -4826,6 +4854,9 @@ const MP = {
 
     async _onGameOver(d){
       if(MP._unsubGame){ MP._unsubGame(); MP._unsubGame=null; }
+      // Guard against double-fire from snapshot
+      if(MP._lastGameOverId===MP.currentGameId) return;
+      MP._lastGameOverId=MP.currentGameId;
       const result=d.result||'draw';
       const msg=d.gameOverMsg||'Game ended';
 
@@ -4913,6 +4944,11 @@ const MP = {
       MP.myColor=whiteUid===MP.user.uid?'white':'black';
       MP.opponent={uid:MP.myColor==='white'?blackUid:whiteUid, name:MP.myColor==='white'?blackName:whiteName, elo:MP.myColor==='white'?blackElo:whiteElo};
       
+      await MP.db.collection('games').doc(gameId).update({
+        status:'playing',
+        lastUpdatedBy: MP.user.uid
+      });
+      
       App.closeModal('over');
       MP.game.startOnline(gameId);
     },
@@ -4968,9 +5004,20 @@ const MP = {
       MP.myColor=whiteUid===MP.user.uid?'black':'white';
       MP.opponent={uid:MP.myColor==='white'?blackUid:whiteUid, name:MP.myColor==='white'?blackName:whiteName, elo:MP.myColor==='white'?blackElo:whiteElo};
       
-      // Close modal and start new game
+      // Close modal
       App.closeModal('over');
-      MP.game.startOnline(gRef.id);
+
+      // Wait for opponent to accept (same pattern as challenge())
+      if(MP._unsubChallengeGame) MP._unsubChallengeGame();
+      MP._unsubChallengeGame=MP.db.collection('games').doc(gRef.id).onSnapshot(snap=>{
+        const gd=snap.data();
+        if(gd && gd.status==='playing'){
+          if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
+          MP.game.startOnline(gRef.id);
+        }else if(gd && (gd.status==='finished'||gd.status==='cancelled'||gd.status==='declined')){
+          if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
+        }
+      });
     },
 
     async resign(){
@@ -4979,6 +5026,7 @@ const MP = {
       const ref=MP.db.collection('games').doc(MP.currentGameId);
       const snap=await ref.get();
       if(snap.exists && snap.data().status==='finished') return;
+      MP._lastGameOverId=MP.currentGameId;
       const winner=MP.myColor==='white'?'black':'white';
       await ref.update({
         status:'finished',
@@ -4993,6 +5041,8 @@ const MP = {
       const ref=MP.db.collection('games').doc(MP.currentGameId);
       const snap=await ref.get();
       if(snap.exists && snap.data().status==='finished') return;
+      // Mark locally before write to prevent race with opponent's sendGameOver
+      MP._lastGameOverId=MP.currentGameId;
       await ref.update({
         status:'finished', result:result, gameOverMsg:msg,
         lastUpdatedBy: MP.user.uid
@@ -5166,9 +5216,9 @@ const MP = {
   MP.init();
 
   // Auto-update checker
-  App.CURRENT_VERSION='2.0';
+  App.CURRENT_VERSION='2.1';
   App.UPDATE_URL='https://koolstar03.github.io/tz-draft/version.txt';
-  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v2.0.apk';
+  App.APK_URL='https://github.com/koolstar03/tz-draft/raw/master/Draft%20TZ%20v2.1.apk';
   const verEl=$('#app-ver');
   if(verEl) verEl.textContent='v'+App.CURRENT_VERSION;
   (async()=>{
