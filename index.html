@@ -569,7 +569,12 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
       <button class="btn" onclick="App.startConfig('pvc')"><span class="btn-icon">&#129302;</span> <span data-i18n="menu.playAI">Cheza na Kompyuta</span></button>
       <button class="btn ghost" onclick="App.startConfig('hvh')"><span class="btn-icon">&#128107;</span> <span data-i18n="menu.human">Cheza na Rafiki</span></button>
       <button class="btn ghost" onclick="App.startConfig('ava')"><span class="btn-icon">&#9851;</span> <span data-i18n="menu.aivAI">AI vs AI</span></button>
-      <button class="btn ghost" onclick="MP.user ? App.showScreen('lobby-screen') : App.showScreen('login-screen')"><span class="btn-icon">&#127760;</span> <span data-i18n="lobby.random">Cheza Online</span></button>
+      <button class="btn ghost" onclick="MP.user ? App.showScreen('lobby-screen') : App.showScreen('login-screen')"><span class="btn-icon">&#127760;</span> <span data-i18n="menu.online">Online Matches</span></button>
+      <button class="btn ghost" onclick="App.startEndgame()"><span class="btn-icon">&#127922;</span> <span data-i18n="menu.endgame">Endgame Practice</span></button>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:8px; max-width:340px; width:100%;">
+      <button class="btn ghost" style="flex:1; padding:12px 10px; font-size:.85rem;" onclick="MP.profile.show()">&#128100; <span data-i18n="lobby.profile">Profile</span></button>
+      <button class="btn ghost" style="flex:1; padding:12px 10px; font-size:.85rem;" onclick="MP.profile.showCosmeticsModal()">&#127912; <span data-i18n="progress.cosmetics">Cosmetics</span></button>
     </div>
     <div id="app-ver" style="margin-top:18px; font-size:.75rem; opacity:.55; text-align:center;">v0.0</div>
   </div>
@@ -720,7 +725,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
         <div style="font-size:.82rem; line-height:1.7; opacity:.75;" data-i18n="settings.rulesText">
           Tanzanian rules are fixed:<br>
           &bull; Capture is mandatory<br>
-          &bull; Maximum capture is required<br>
+          &bull; Any legal capture route may be chosen; once you start, the chain must be completed<br>
           &bull; Flying kings<br>
           &bull; Men cannot capture backward<br>
           &bull; Reaching the king row ends your turn
@@ -750,7 +755,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
       <div class="modal-title" data-i18n="help.title">How to Play</div>
       <div class="scroll" style="max-height:60vh; line-height:1.5; font-size:.95rem; opacity:.9;" data-i18n="help.content">
         <p><strong>Move:</strong> Click or drag pieces along dark diagonals.</p>
-        <p><strong>Capture:</strong> Jump over an opponent piece. Multiple jumps are mandatory if available (based on rules).</p>
+        <p><strong>Capture:</strong> Jump over an opponent piece. Captures are mandatory — if you can capture, you must. You may choose any capture route, but once you start a capture you must complete the full chain.</p>
         <p><strong>King:</strong> Reach the far back rank to promote. Kings move backward. When a piece becomes a king, its turn ends immediately — no further captures that turn.</p>
         <p><strong>Win:</strong> Capture all enemy pieces or block every move.</p>
         <p><strong>Draw:</strong> 3-fold repetition, or 40 moves without capture.</p>
@@ -862,6 +867,18 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
       <div id="cosmetics-list" style="display:flex; flex-direction:column; gap:6px; max-height:45vh; overflow-y:auto; margin-top:8px;"></div>
       <div class="modal-footer">
         <button class="btn ghost" onclick="App.closeModal('cosmetics')" data-i18n="settings.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CONFIRM MODAL ==================== -->
+  <div class="modal" id="modal-confirm">
+    <div class="modal-panel glass">
+      <div class="modal-title">Confirm</div>
+      <div id="confirm-msg" style="font-size:.95rem; opacity:.9; line-height:1.5;"></div>
+      <div class="modal-footer">
+        <button class="btn ghost" onclick="App._confirmResult(false)">Cancel</button>
+        <button class="btn" onclick="App._confirmResult(true)">OK</button>
       </div>
     </div>
   </div>
@@ -1068,6 +1085,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
    ========================================================= */
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -1094,9 +1112,10 @@ const LANG_DATA = {
     'menu.title': 'Tanzanian Draft',
     'menu.subtitle': 'Human vs Computer \u00b7 Human vs Human \u00b7 AI vs AI',
     'menu.playAI': 'Play vs Computer',
-    'menu.online': 'Online Play',
+    'menu.online': 'Online Matches',
     'menu.human': 'Human vs Human',
     'menu.aivAI': 'AI vs AI',
+    'menu.endgame': 'Endgame Practice',
     'menu.settings': 'Settings',
     'menu.stats': 'Statistics',
     'menu.saves': 'Saved Games',
@@ -1220,7 +1239,7 @@ const LANG_DATA = {
     'settings.anim': 'Animation Speed',
     'settings.volume': 'Sound Volume',
     'settings.difficulty': 'Difficulty',
-    'settings.rulesText': 'Tanzanian rules are fixed:<br>\u2022 Capture is mandatory<br>\u2022 Maximum capture is required<br>\u2022 Flying kings<br>\u2022 Men cannot capture backward<br>\u2022 Reaching the king row ends your turn',
+    'settings.rulesText': 'Tanzanian rules are fixed:<br>\u2022 Capture is mandatory<br>\u2022 Any legal capture route may be chosen; once you start, the chain must be completed<br>\u2022 Flying kings<br>\u2022 Men cannot capture backward<br>\u2022 Reaching the king row ends your turn',
     'settings.close': 'Close',
     // Stats
     'stats.title': 'Statistics',
@@ -1239,7 +1258,7 @@ const LANG_DATA = {
     'saves.close': 'Close',
     // Help
     'help.title': 'How to Play',
-    'help.content': '<p><strong>Move:</strong> Click or drag pieces along dark diagonals.</p><p><strong>Capture:</strong> Jump over an opponent piece. Multiple jumps are mandatory if available.</p><p><strong>King:</strong> Reach the far back rank to promote. Kings fly (any distance on diagonal). When a piece becomes a king, its turn ends immediately.</p><p><strong>Win:</strong> Capture all enemy pieces or block every move.</p><p><strong>Draw:</strong> 3-fold repetition, or 40 moves without capture.</p><p style="margin-top:10px; opacity:.7;">Keyboard: Tab/Arrows to navigate, Enter to select, Space to confirm.</p>',
+    'help.content': '<p><strong>Move:</strong> Click or drag pieces along dark diagonals.</p><p><strong>Capture:</strong> Jump over an opponent piece. Captures are mandatory — if you can capture, you must. You may choose any capture route, but once you start a capture you must complete the full chain.</p><p><strong>King:</strong> Reach the far back rank to promote. Kings fly (any distance on diagonal). When a piece becomes a king, its turn ends immediately.</p><p><strong>Win:</strong> Capture all enemy pieces or block every move.</p><p><strong>Draw:</strong> 3-fold repetition, or 40 moves without capture.</p><p style="margin-top:10px; opacity:.7;">Keyboard: Tab/Arrows to navigate, Enter to select, Space to confirm.</p>',
     'help.close': 'Close',
     // About
     'about.subtitle': 'Tanzanian Draft',
@@ -1267,9 +1286,10 @@ const LANG_DATA = {
     'menu.title': 'Draft ya Tanzania',
     'menu.subtitle': 'Wewe dhidi ya Kompyuta \u00b7 Wewe dhidi ya Rafiki \u00b7 AI dhidi ya AI',
     'menu.playAI': 'Cheza na Kompyuta',
-    'menu.online': 'Cheza Online',
+    'menu.online': 'Michezo ya Mtandaoni',
     'menu.human': 'Cheza na Rafiki',
     'menu.aivAI': 'AI dhidi ya AI',
+    'menu.endgame': 'Mazoezi ya Mwisho',
     'menu.settings': 'Mpangilio',
     'menu.stats': 'Takwimu',
     'menu.saves': 'Mchezo uliohifadhiwa',
@@ -1382,7 +1402,7 @@ const LANG_DATA = {
     'settings.anim': 'Kasi ya Mchakato',
     'settings.volume': 'Sauti',
     'settings.difficulty': 'Ugumu',
-    'settings.rulesText': 'Sheria za Tanzania ni hizi:<br>\u2022 Kukamata ni lazima<br>\u2022 Lazima ukamate idadi ya juu<br>\u2022 Wafalme wanaruka<br>\u2022 Washindi hawawezi kukamata nyuma<br>\u2022 Kufikia safu ya mfalme kumaliza zamu yako',
+    'settings.rulesText': 'Sheria za Tanzania ni hizi:<br>\u2022 Kukamata ni lazima<br>\u2022 Unaweza kuchagua njia yoyote halali ya kukamata; ukianza, lazima ukamilishe mlolongo wote<br>\u2022 Wafalme wanaruka<br>\u2022 Washindi hawawezi kukamata nyuma<br>\u2022 Kufikia safu ya mfalme kumaliza zamu yako',
     'settings.close': 'Funga',
     'stats.title': 'Takwimu',
     'stats.games': 'Michezo',
@@ -1398,7 +1418,7 @@ const LANG_DATA = {
     'saves.save': 'Hifadhi Sasa',
     'saves.close': 'Funga',
     'help.title': 'Jinsi ya Kucheza',
-    'help.content': '<p><strong>Songa:</strong> Bofya au uburute vipande kwa misingi ya giza.</p><p><strong>Kamata:</strong> Ruka juu ya kipande cha mpinzani. Ruka nyingi ni lazima ikiwa zinapatikana.</p><p><strong>Mfalme:</strong> Fikia safu ya mbali kupata cheo. Wafalme wanaruka (umbali wowote kwa mzingo). Mwanaposha mfalme, zamu yake inaisha mara moja.</p><p><strong>Shinda:</strong> Kamata vipande vyote vya adui au zuia kila hatua.</p><p><strong>Sare:</strong> Rudia mara 3, au visonga 40 bila kukamata.</p><p style="margin-top:10px; opacity:.7;">Kibodi: Tab/Mishumaa kusogeza, Enter kuchagua, Nafasi kuthibitisha.</p>',
+    'help.content': '<p><strong>Songa:</strong> Bofya au uburute vipande kwa misingi ya giza.</p><p><strong>Kamata:</strong> Ruka juu ya kipande cha mpinzani. Kukamata ni lazima — ikiwa unaweza kukamata, lazima ufanye hivyo. Unaweza kuchagua njia yoyote ya kukamata, lakini ukianza lazima ukamilishe mlolongo mzima.</p><p><strong>Mfalme:</strong> Fikia safu ya mbali kupata cheo. Wafalme wanaruka (umbali wowote kwa mzingo). Mwanaposha mfalme, zamu yake inaisha mara moja.</p><p><strong>Shinda:</strong> Kamata vipande vyote vya adui au zuia kila hatua.</p><p><strong>Sare:</strong> Rudia mara 3, au visonga 40 bila kukamata.</p><p style="margin-top:10px; opacity:.7;">Kibodi: Tab/Mishumaa kusogeza, Enter kuchagua, Nafasi kuthibitisha.</p>',
     'help.close': 'Funga',
     'about.subtitle': 'Draft ya Tanzania',
     'about.createdBy': 'Imeundwa na',
@@ -1795,6 +1815,59 @@ function generateSingleCaptures(state, rules, fromIdx, capturedSoFar){
     }
   }
   return moves;
+}
+
+/* =========================================================
+   ENDGAME PRACTICE (offline only)
+   Player takes the 3-piece side (white, moves first); the AI
+   defends with a lone black king. Composition is random:
+   3K | 2K+1M | 1K+2M. Positions with an immediate mandatory
+   capture or a side with no legal move are rejected so the
+   game always starts open-ended.
+   ========================================================= */
+function _egState(board){
+  const s=new State(8); s.board.set(board); return s;
+}
+function _egHasCapture(board, turn, rules){
+  const s=_egState(board); s.turn=turn;
+  return generateMoves(s, rules).some(m=>m.captures.length);
+}
+function _egHasMove(board, turn, rules){
+  const s=_egState(board); s.turn=turn;
+  return generateMoves(s, rules).length>0;
+}
+function generateEndgamePosition(){
+  const sz=8, N=sz*sz;
+  const dark=[];
+  for(let i=0;i<N;i++){ const r=(i/sz)|0, c=i%sz; if(((r+c)&1)===1) dark.push(i); }
+  const rules=new Rules({boardSize:8});
+  const comps=[[P.WK,P.WK,P.WK],[P.WK,P.WK,P.WM],[P.WK,P.WM,P.WM]];
+  const pieces=comps[(Math.random()*comps.length)|0];
+  for(let attempt=0; attempt<400; attempt++){
+    const board=new Uint8Array(N);
+    const bIdx=dark[(Math.random()*dark.length)|0];
+    board[bIdx]=P.BK;
+    const avail=dark.filter(i=>i!==bIdx);
+    let ok=true;
+    for(let k=0;k<3;k++){
+      if(!avail.length){ ok=false; break; }
+      const j=(Math.random()*avail.length)|0;
+      board[avail.splice(j,1)[0]]=pieces[k];
+    }
+    if(!ok) continue;
+    if(_egHasCapture(board, COLOR.W, rules) || _egHasCapture(board, COLOR.B, rules)) continue;
+    if(!_egHasMove(board, COLOR.W, rules) || !_egHasMove(board, COLOR.B, rules)) continue;
+    return board;
+  }
+  // Ultra-rare fallback (unconstrained) so the mode never hangs.
+  const board=new Uint8Array(N);
+  board[dark[(Math.random()*dark.length)|0]]=P.BK;
+  const avail=dark.slice();
+  for(let k=0;k<3;k++){
+    const j=(Math.random()*avail.length)|0;
+    board[avail.splice(j,1)[0]]=pieces[k];
+  }
+  return board;
 }
 
 /* =========================================================
@@ -2394,7 +2467,7 @@ class AI{
     return mv || null;
   }
 
-  pickMove(state, rules){
+  async pickMove(state, rules){
     const start=performance.now();
     const moves=generateMoves(state,rules);
     if(!moves.length) return null;
@@ -2532,8 +2605,7 @@ class AI{
     const minThink = effectiveTime * 0.5;
     if(this.thinkTime < minThink){
       const pad = minThink - this.thinkTime;
-      const padEnd = performance.now() + pad;
-      while(performance.now() < padEnd){ /* busy-wait */ }
+      await sleep(pad);
       this.thinkTime = performance.now() - start;
     }
 
@@ -2666,6 +2738,11 @@ const Game = {
       this.humanColor = cfg.firstMove==='computer' ? 'black' : 'white';
       this.aiWhite = (cfg.firstMove==='computer') ? new AI(cfg.difficulty) : null;
       this.aiBlack = (cfg.firstMove!=='computer') ? new AI(cfg.difficulty) : null;
+    }else if(this.mode==='endgame'){
+      // Offline-only practice: player always holds the 3-piece side (white).
+      this.humanColor = 'white';
+      this.aiWhite = null;
+      this.aiBlack = new AI(cfg.difficulty);
     }else{
       this.humanColor = 'white';
       this.aiWhite = new AI(cfg.difficulty);
@@ -2673,13 +2750,18 @@ const Game = {
     }
     if(cfg.firstMove==='random') this.state.turn = Math.random()<0.5? COLOR.W : COLOR.B;
     Renderer.init(size);
+    if(cfg.mode==='endgame' && cfg.endgameBoard){
+      this.state.board.set(cfg.endgameBoard);
+      this.state.turn = COLOR.W;
+      this.state.halfmoveClock = 0;
+    }
     MP.cosmetics.applyEquipped().catch(()=>{});
     this.update();
     this.tryAIMove();
     this.autoSave();
     // Show undo button only for AI games
     const undoBtn=$('#btn-undo');
-    if(undoBtn) undoBtn.style.display = (this.mode==='pvc'||this.mode==='ava') ? '' : 'none';
+    if(undoBtn) undoBtn.style.display = (this.mode==='pvc'||this.mode==='ava'||this.mode==='endgame') ? '' : 'none';
     // Start move timer for online games
     if(this.mode==='online') MP.timer.reset(); else MP.timer.stop();
     // Auto-fullscreen
@@ -2722,8 +2804,8 @@ const Game = {
       if(p===P.WK) {w++; wk++;}
       if(p===P.BK) {b++; bk++;}
     }
-    $('#badge-diff').textContent = Settings.get('difficulty').toUpperCase();
-    $('#mobile-diff').textContent = Settings.get('difficulty').toUpperCase();
+    $('#badge-diff').textContent = this.mode==='endgame' ? t('menu.endgame').toUpperCase() : Settings.get('difficulty').toUpperCase();
+    $('#mobile-diff').textContent = this.mode==='endgame' ? t('menu.endgame').toUpperCase() : Settings.get('difficulty').toUpperCase();
     // eval bar (simple material count)
     const total = w+b || 1;
     const pct = Math.round((w/total)*100);
@@ -2931,9 +3013,9 @@ const Game = {
     const aiInfo=$('#ai-info');
     if(thinker) thinker.classList.add('active');
     if(aiInfo) aiInfo.textContent='-';
-    setTimeout(()=>{
+    setTimeout(async()=>{
       try{
-      const mv=ai.pickMove(this.state, this.rules);
+      const mv=await ai.pickMove(this.state, this.rules);
       if(thinker) thinker.classList.remove('active');
       if(!mv){ this.checkEnd(true); return; }
       if(aiInfo) aiInfo.textContent = `Depth ${ai.reachedDepth||ai.depths[ai.level]} | Nodes ${(ai.nodes/1000).toFixed(1)}k | ${ai.thinkTime.toFixed(0)}ms`;
@@ -3013,6 +3095,7 @@ const Game = {
       let result;
       if(this.mode==='hvh') result='win';
       else if(this.mode==='pvc') result=(this.humanColor==='black'?'win':'loss');
+      else if(this.mode==='endgame') result=(this.humanColor==='white'?'loss':'win');
       else result='loss';
       this.gameOver(result, 'Black captures all.');
       return true; }
@@ -3021,6 +3104,7 @@ const Game = {
       let result;
       if(this.mode==='hvh') result='win';
       else if(this.mode==='pvc') result=(this.humanColor==='white'?'win':'loss');
+      else if(this.mode==='endgame') result=(this.humanColor==='white'?'win':'loss');
       else result='loss';
       this.gameOver(result, 'White captures all.');
       return true; }
@@ -3044,9 +3128,9 @@ const Game = {
     else if(result==='loss'){ title='Defeat'; Audio.play('defeat'); }
     else Audio.play('move');
     // Only update local stats for non-online games (online handled by _onGameOver)
-    if(this.mode!=='online') Stats.add(result, this.state.history.length, this.seconds);
-    // Track stats + award stars in Firestore
-    if(MP.user && MP.db && this.mode!=='hvh' && this.mode!=='online'){
+    if(this.mode!=='online' && this.mode!=='endgame') Stats.add(result, this.state.history.length, this.seconds);
+    // Track stats + award stars in Firestore (never for offline-only endgame practice)
+    if(MP.user && MP.db && this.mode!=='hvh' && this.mode!=='online' && this.mode!=='endgame'){
       MP.rewards.processGame({result, drawType:'automatic', moveCount:this.state.history.length, gameStats:this._gameMetrics||{}}).catch(()=>{});
     }
     $('#over-title').textContent=title; $('#over-msg').textContent=msg;
@@ -3072,7 +3156,7 @@ const Game = {
     this.selected=null; this.jumping=null; this.capturedPieces=[]; this.update();
   },
   serialize(){
-    return {size:this.state.size, board:Array.from(this.state.board), turn:this.state.turn, halfmoveClock:this.state.halfmoveClock, history:this.state.history, lastMove:this.lastMove, rep:Array.from(this.state.rep.entries())};
+    return {mode:this.mode, size:this.state.size, board:Array.from(this.state.board), turn:this.state.turn, halfmoveClock:this.state.halfmoveClock, history:this.state.history, lastMove:this.lastMove, rep:Array.from(this.state.rep.entries())};
   },
   restore(data){
     this.state = new State(data.size);
@@ -3099,29 +3183,16 @@ const Game = {
   },
 
   hint(){
-    // Check if hints are available
-    if(MP.user && MP.db){
-      // Online: check Firestore
-      MP.db.collection('userStats').doc(MP.user.uid).get().then(snap=>{
-        const d=snap.data()||{};
-        const hints=d.hints||0;
-        if(hints<=0){ alert('No hints left! Win a game to earn a hint.'); return; }
-        this._useHint();
-        MP.db.collection('userStats').doc(MP.user.uid).update({hints:firebase.firestore.FieldValue.increment(-1)}).catch(()=>{});
-      }).catch(()=>{ alert('Could not check hints. Try again.'); });
-    }else{
-      // Offline: check localStorage
-      Stats.ensure();
-      const hints=Stats.data.hints||0;
-      if(hints<=0){ alert('No hints left! Win a game to earn a hint.'); return; }
-      this._useHint();
-      Stats.data.hints=Math.max(0,hints-1);
-      Stats.save();
-    }
+    // Hints now live in the local progression store (offline-safe)
+    const p=MP.progression.load();
+    if((p.hints||0)<=0){ alert('No hints left! Win a game to earn a hint.'); return; }
+    this._useHint();
+    p.hints=Math.max(0,(p.hints||0)-1);
+    MP.progression.save();
   },
-  _useHint(){
+  async _useHint(){
     const ai = new AI('expert');
-    const mv = ai.pickMove(this.state.clone(), this.rules);
+    const mv = await ai.pickMove(this.state.clone(), this.rules);
     if(!mv) return;
     Renderer.highlightHint(mv.from, mv.to);
     this.updateHintCount();
@@ -3129,15 +3200,8 @@ const Game = {
   updateHintCount(){
     const el=$('#hint-count');
     if(!el) return;
-    if(MP.user && MP.db){
-      MP.db.collection('userStats').doc(MP.user.uid).get().then(snap=>{
-        const d=snap.data()||{};
-        el.textContent='('+((d.hints)||0)+')';
-      }).catch(()=>{ el.textContent=''; });
-    }else{
-      Stats.ensure();
-      el.textContent='('+((Stats.data.hints)||0)+')';
-    }
+    const p=MP.progression.load();
+    el.textContent='('+((p.hints)||0)+')';
   },
   resign(){
     if(this.mode==='online' && MP.user){
@@ -3154,8 +3218,9 @@ const Game = {
   fmt(s){ const m=Math.floor(s/60); return `${m}:${String(s%60).padStart(2,'0')}`; },
 
   // Save / Load
-  autoSave(){ if(this.mode==='online') return; lsSet('dc_autosave', JSON.stringify(this.serialize())); },
+  autoSave(){ if(this.mode==='online'||this.mode==='endgame') return; lsSet('dc_autosave', JSON.stringify(this.serialize())); },
   saveSlot(name='Manual Save'){
+    if(this.mode==='endgame') return;
     const saves = (()=>{ try{ return JSON.parse(lsGet('dc_saves')||'[]'); }catch(e){} return []; })();
     saves.unshift({name:name||'Save', date:Date.now(), data:this.serialize()});
     if(saves.length>20) saves.pop();
@@ -3164,10 +3229,11 @@ const Game = {
     alert('Game saved.');
   },
   loadSlot(data){
-    if(!confirm('Load saved game? Current progress will be lost.')) return;
-    this.restore(data);
-    this.past=[]; this.selected=null; this.jumping=null; this.capturedPieces=[];
-    Renderer.init(data.size); this.update(); this.startTimer(); App.showScreen('game-screen'); this.updateHintCount();
+    App.confirm('Load saved game? Current progress will be lost.', ()=>{
+      this.restore(data);
+      this.past=[]; this.selected=null; this.jumping=null; this.capturedPieces=[];
+      Renderer.init(data.size); this.update(); this.startTimer(); App.showScreen('game-screen'); this.updateHintCount();
+    });
   },
   renderSaves(){
     const el=$('#saves-list');
@@ -3211,11 +3277,35 @@ const App = {
     if(id==='load') Game.renderSaves();
   },
   closeModal(id){ const el=$(`#modal-${id}`); if(el) el.classList.remove('active'); },
+  _confirmYes: null,
+  _confirmNo: null,
+  confirm(message, onYes, onNo){
+    const msgEl=$('#confirm-msg');
+    if(msgEl) msgEl.textContent=message;
+    this._confirmYes=onYes||null;
+    this._confirmNo=onNo||null;
+    this.showModal('confirm');
+  },
+  _confirmResult(yes){
+    this.closeModal('confirm');
+    const cb=yes?this._confirmYes:this._confirmNo;
+    this._confirmYes=null;
+    this._confirmNo=null;
+    if(cb) cb();
+  },
 
   startConfig(mode){
     $('#cfg-mode').value=mode;
     $('#cfg-difficulty').value = Settings.get('difficulty');
     this.showScreen('config-screen');
+  },
+
+  // Endgame Practice: offline-only, no login or Firestore involved.
+  startEndgame(){
+    const board = generateEndgamePosition();
+    Game.newGame({mode:'endgame', difficulty:Settings.get('difficulty'), boardSize:8, firstMove:'human', endgameBoard:board});
+    this.showScreen('game-screen');
+    Game.updateHintCount();
   },
 
   startGame(){
@@ -3515,12 +3605,12 @@ const MP = {
     // ONE authoritative star reward handler
     // opts: { result:'win'|'loss'|'draw', drawType:'automatic'|'manual', moveCount:number }
     async awardStars(opts){
-      if(!MP.user||!MP.db) return;
+      const p=MP.progression.load();
       const result=typeof opts==='string'?opts:opts.result;
       const drawType=typeof opts==='object'&&(opts.drawType||'automatic');
       const moveCount=typeof opts==='object'&&(opts.moveCount||0);
 
-      if(result!=='win'&&result!=='draw') return;
+      if(result!=='win'&&result!=='draw') return {earned:0,totalStars:p.totalStars,level:p.level,levelUp:false};
 
       // Calculate earned stars
       let earned=0;
@@ -3534,16 +3624,12 @@ const MP = {
         else{ earned=0; }
       }
 
-      if(earned===0) return;
-
-      const ref=MP.db.collection('userStats').doc(MP.user.uid);
-      const snap=await ref.get();
-      const d=snap.exists?snap.data():{totalStars:0,level:1,starsInLevel:0};
+      if(earned===0) return {earned:0,totalStars:p.totalStars,level:p.level,levelUp:false};
 
       // Incremental update — level and starsInLevel are source of truth
-      let level=d.level||1;
-      let starsInLevel=d.starsInLevel||0;
-      const totalStars=(d.totalStars||0)+earned;
+      let level=p.level||1;
+      let starsInLevel=p.starsInLevel||0;
+      const totalStars=(p.totalStars||0)+earned;
 
       // Add stars to current level progress
       starsInLevel+=earned;
@@ -3567,11 +3653,10 @@ const MP = {
       // Cap at max level
       if(level>=ML) starsInLevel=0;
 
-      await ref.set({
-        totalStars,
-        level,
-        starsInLevel
-      },{merge:true});
+      p.totalStars=totalStars;
+      p.level=level;
+      p.starsInLevel=starsInLevel;
+      MP.progression.save();
 
       // Level-up animation
       if(levelUp){
@@ -3583,6 +3668,139 @@ const MP = {
 
     _onLevelUp(lv){
       MP.notifications.push({text:`LEVEL UP! Level ${lv}`,bg:'rgba(76,175,80,.95)',dur:2500});
+    }
+  },
+
+  /* ---- LOCAL PROGRESSION (offline-first userStats mirror) ---- */
+  progression:{
+    KEY:'dc_userstats',
+    _data:null,
+
+    _defaults(){
+      return {
+        totalStars:0, level:1, starsInLevel:0,
+        wins:0, losses:0, draws:0, gamesPlayed:0, hints:3,
+        maxWinStreak:0, fastestWinMoves:Infinity,
+        equipped:{title:null,board:null,pieces:null,border:null,avatar:null},
+        unlocked:{
+          titles:['mfanunzi'],
+          achievements:[],
+          cosmetics:{boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']}
+        },
+        achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
+      };
+    },
+
+    _backfillCosmetics(cos){
+      const def={boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']};
+      const out={};
+      for(const cat of Object.keys(def)){
+        const arr=(cos&&cos[cat])||[];
+        out[cat]=def[cat].concat(arr.filter(id=>def[cat].indexOf(id)===-1));
+      }
+      return out;
+    },
+
+    load(){
+      if(this._data) return this._data;
+      let d={};
+      try{ d=JSON.parse(lsGet(this.KEY))||{}; }catch(e){}
+      const base=this._defaults();
+      const u=(d.unlocked)||{};
+      this._data={
+        ...base, ...d,
+        equipped:{...base.equipped, ...(d.equipped||{})},
+        unlocked:{
+          titles:Array.from(new Set(base.unlocked.titles.concat(u.titles||[]))),
+          achievements:Array.from(new Set(u.achievements||[])),
+          cosmetics:this._backfillCosmetics((u.cosmetics)||{})
+        },
+        achievementsMetrics:{...base.achievementsMetrics, ...(d.achievementsMetrics||{})}
+      };
+      return this._data;
+    },
+
+    save(){
+      const d=this._data||this.load();
+      const out={...d};
+      if(out.fastestWinMoves===Infinity) out.fastestWinMoves=null;
+      try{ lsSet(this.KEY, JSON.stringify(out)); }catch(e){}
+    }
+  },
+
+  /* ---- LOCAL <-> FIREBASE PROGRESSION SYNC ---- */
+  sync:{
+    async mergeProgress(){
+      if(!MP.user||!MP.db) return;
+      const ref=MP.db.collection('userStats').doc(MP.user.uid);
+      const snap=await ref.get().catch(()=>null);
+      if(!snap) return;
+      const cloud=snap.exists?snap.data():{};
+      const local=MP.progression.load();
+      const merged=this._merge(local,cloud);
+      MP.progression._data=merged;
+      MP.progression.save();
+      await ref.set(this._clean(merged),{merge:true}).catch(()=>{});
+    },
+
+    _merge(local,cloud){
+      const max=(a,b)=>Math.max(a||0,b||0);
+      const lEq=local.equipped||{}, cEq=cloud.equipped||{};
+      const m={
+        totalStars:max(local.totalStars,cloud.totalStars),
+        wins:max(local.wins,cloud.wins),
+        losses:max(local.losses,cloud.losses),
+        draws:max(local.draws,cloud.draws),
+        gamesPlayed:max(local.gamesPlayed,cloud.gamesPlayed),
+        hints:max(local.hints,cloud.hints),
+        maxWinStreak:max(local.maxWinStreak,cloud.maxWinStreak),
+        fastestWinMoves:Math.min(local.fastestWinMoves||Infinity,cloud.fastestWinMoves||Infinity),
+        equipped:{
+          title:lEq.title!=null?lEq.title:(cEq.title!=null?cEq.title:null),
+          board:lEq.board!=null?lEq.board:(cEq.board!=null?cEq.board:null),
+          pieces:lEq.pieces!=null?lEq.pieces:(cEq.pieces!=null?cEq.pieces:null),
+          border:lEq.border!=null?lEq.border:(cEq.border!=null?cEq.border:null),
+          avatar:lEq.avatar!=null?lEq.avatar:(cEq.avatar!=null?cEq.avatar:null)
+        },
+        unlocked:{
+          titles:Array.from(new Set((local.unlocked.titles||[]).concat(cloud.unlocked.titles||[]))),
+          achievements:Array.from(new Set((local.unlocked.achievements||[]).concat(cloud.unlocked.achievements||[]))),
+          cosmetics:this._mergeCosmetics((local.unlocked.cosmetics||{}),(cloud.unlocked.cosmetics||{}))
+        },
+        achievementsMetrics:this._mergeMetrics((local.achievementsMetrics||{}),(cloud.achievementsMetrics||{}))
+      };
+      // Recompute level/starsInLevel from totalStars so the pair stays consistent
+      const ML=MP.PROGRESSION_CONFIG.MAX_LEVEL;
+      let lv=1, remaining=m.totalStars;
+      while(lv<ML && remaining>=MP.stars.starsForLevel(lv)){ remaining-=MP.stars.starsForLevel(lv); lv++; }
+      m.level=lv; m.starsInLevel=lv>=ML?0:remaining;
+      return m;
+    },
+
+    _mergeCosmetics(a,b){
+      const def={boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']};
+      const out={};
+      for(const cat of Object.keys(def)){
+        const seen={};
+        def[cat].forEach(id=>{ seen[id]=1; });
+        (a[cat]||[]).forEach(id=>{ seen[id]=1; });
+        (b[cat]||[]).forEach(id=>{ seen[id]=1; });
+        out[cat]=Object.keys(seen);
+      }
+      return out;
+    },
+
+    _mergeMetrics(a,b){
+      const keys=['totalPiecesLost','longestGameMoves','comebackWins','maxMovesWithoutLoss','opponentPiecesLost'];
+      const out={};
+      for(const k of keys) out[k]=Math.max(a[k]||0,b[k]||0);
+      return out;
+    },
+
+    _clean(obj){
+      const o=JSON.parse(JSON.stringify(obj));
+      if(o.fastestWinMoves==null) delete o.fastestWinMoves;
+      return o;
     }
   },
 
@@ -3734,10 +3952,8 @@ const MP = {
       return lang==='sw'?item.sw:item.name;
     },
     async applyEquipped(){
-      if(!MP.user||!MP.db) return;
-      const sSnap=await MP.db.collection('userStats').doc(MP.user.uid).get();
-      const s=sSnap.exists?sSnap.data():{};
-      const eq=s.equipped||{};
+      const p=MP.progression.load();
+      const eq=p.equipped||{};
       if(eq.board) App.setBoardTheme(eq.board);
       if(eq.pieces) App.setPieceTheme(eq.pieces);
       if(eq.border){
@@ -3754,35 +3970,28 @@ const MP = {
   rewards:{
     async processGame(opts){
       // opts: {result:'win'|'loss'|'draw', drawType:string, moveCount:number, gameStats:{}}
-      if(!MP.user||!MP.db) return;
+      // Local-first: writes to MP.progression (offline-safe), synced to Firestore on sign-in.
       const {result,drawType,moveCount,gameStats}=opts;
-
-      const ref=MP.db.collection('userStats').doc(MP.user.uid);
+      const p=MP.progression.load();
 
       // 1. Update gamesPlayed/wins/losses/draws FIRST
-      const statsUpdate={};
-      statsUpdate.gamesPlayed = firebase.firestore.FieldValue.increment(1);
-      if(result==='win'){ statsUpdate.wins = firebase.firestore.FieldValue.increment(1); statsUpdate.hints = firebase.firestore.FieldValue.increment(1); }
-      else if(result==='loss') statsUpdate.losses = firebase.firestore.FieldValue.increment(1);
-      else statsUpdate.draws = firebase.firestore.FieldValue.increment(1);
-      await ref.set(statsUpdate,{merge:true}).catch(()=>{});
+      p.gamesPlayed=(p.gamesPlayed||0)+1;
+      if(result==='win'){ p.wins=(p.wins||0)+1; p.hints=(p.hints||0)+1; }
+      else if(result==='loss'){ p.losses=(p.losses||0)+1; }
+      else p.draws=(p.draws||0)+1;
 
       // 2. Award stars (reads then writes level/totalStars/starsInLevel)
       const starResult=await MP.stars.awardStars({result,drawType,moveCount});
 
-      // 3. Read updated stats
-      const snap=await ref.get().catch(()=>null);
-      if(!snap) return;
-      const d=snap.exists?snap.data():{};
-
-      const lv=d.level||1;
-      const totalStars=d.totalStars||0;
-      const unlocked=(d.unlocked||{});
+      // 3. Read updated stats (same cached object)
+      const lv=p.level||1;
+      const totalStars=p.totalStars||0;
+      const unlocked=(p.unlocked||{});
       const titlesUnlocked=unlocked.titles||[];
       const achievementsUnlocked=unlocked.achievements||[];
 
       // 4. Update achievement metrics
-      const metrics=d.achievementsMetrics||{};
+      const metrics=p.achievementsMetrics||{};
       if(gameStats){
         if(gameStats.piecesLost!==undefined) metrics.totalPiecesLost=(metrics.totalPiecesLost||0)+gameStats.piecesLost;
         if(gameStats.moveCount!==undefined) metrics.longestGameMoves=Math.max(metrics.longestGameMoves||0,gameStats.moveCount);
@@ -3790,14 +3999,15 @@ const MP = {
         if(gameStats.movesWithoutLoss!==undefined) metrics.maxMovesWithoutLoss=Math.max(metrics.maxMovesWithoutLoss||0,gameStats.movesWithoutLoss);
         if(gameStats.opponentPiecesLost!==undefined) metrics.opponentPiecesLost=(metrics.opponentPiecesLost||0)+gameStats.opponentPiecesLost;
       }
+      p.achievementsMetrics=metrics;
 
       // Compute stats for achievement checks
       const statsForCheck={
-        level:lv, wins:d.wins||0, losses:d.losses||0, gamesPlayed:d.gamesPlayed||0,
-        minPiecesLost:metrics.totalPiecesLost===0&&d.wins>0?0:undefined,
-        maxWinStreak:d.maxWinStreak||0, comebackWins:metrics.comebackWins||0,
+        level:lv, wins:p.wins||0, losses:p.losses||0, gamesPlayed:p.gamesPlayed||0,
+        minPiecesLost:metrics.totalPiecesLost===0&&p.wins>0?0:undefined,
+        maxWinStreak:p.maxWinStreak||0, comebackWins:metrics.comebackWins||0,
         maxJumpsInTurn:gameStats?gameStats.maxJumpsInTurn||0:0,
-        fastestWinMoves:d.fastestWinMoves||Infinity,
+        fastestWinMoves:p.fastestWinMoves||Infinity,
         longestGameMoves:metrics.longestGameMoves||0
       };
 
@@ -3808,7 +4018,7 @@ const MP = {
       // 5. Check cosmetic unlocks
       const newCosmetics=[];
       for(const cat of Object.keys(MP.cosmetics.CATALOG)){
-        const unlockedIds=MP.cosmetics.getUnlockedIds(cat,{level:lv,wins:d.wins||0});
+        const unlockedIds=MP.cosmetics.getUnlockedIds(cat,{level:lv,wins:p.wins||0});
         const stored=(unlocked.cosmetics||{})[cat]||[];
         for(const id of unlockedIds){
           if(!stored.includes(id)){
@@ -3820,17 +4030,12 @@ const MP = {
         unlocked.cosmetics[cat]=stored;
       }
 
-      // 6. Persist all unlocks
+      // 6. Persist all unlocks locally (mutations already applied to p)
       if(newTitles.length||newAchievements.length||newCosmetics.length){
         titlesUnlocked.push(...newTitles.map(t=>t.id));
         achievementsUnlocked.push(...newAchievements.map(a=>a.id));
-        await ref.set({
-          unlocked:{titles:titlesUnlocked,achievements:achievementsUnlocked,cosmetics:unlocked.cosmetics||{}},
-          achievementsMetrics:metrics
-        },{merge:true}).catch(()=>{});
-      }else if(Object.keys(metrics).length){
-        await ref.set({achievementsMetrics:metrics},{merge:true}).catch(()=>{});
       }
+      MP.progression.save();
 
       // 7. Queue notifications
       const lang=currentLang;
@@ -3865,41 +4070,46 @@ const MP = {
       MP.profile.render();
     },
     async render(){
-      if(!MP.user||!MP.db) return;
-      const uSnap=await MP.db.collection('users').doc(MP.user.uid).get();
-      const sSnap=await MP.db.collection('userStats').doc(MP.user.uid).get();
-      const u=uSnap.exists?uSnap.data():{};
-      const s=sSnap.exists?sSnap.data():{totalStars:0,level:1,starsInLevel:0,wins:0,losses:0,draws:0,gamesPlayed:0,hints:3};
-      const totalStars=s.totalStars||0;
-      const lv=s.level||1;
+      const p=MP.progression.load();
+      let u={};
+      if(MP.user&&MP.db){
+        const uSnap=await MP.db.collection('users').doc(MP.user.uid).get().catch(()=>null);
+        if(uSnap&&uSnap.exists) u=uSnap.data();
+      }
+      const totalStars=p.totalStars||0;
+      const lv=p.level||1;
       const needed=MP.stars.starsForLevel(lv);
-      const inLevel=s.starsInLevel||0;
+      const inLevel=p.starsInLevel||0;
       const pct=needed>0?Math.min(100,Math.round((inLevel/needed)*100)):100;
-      const winrate=s.gamesPlayed?Math.round(((s.wins||0)/s.gamesPlayed)*100):0;
+      const winrate=p.gamesPlayed?Math.round(((p.wins||0)/p.gamesPlayed)*100):0;
       const avatar=$('#profile-avatar');
-      if(u.photoURL) avatar.innerHTML=`<img src="${u.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-      else avatar.textContent=(u.displayName||'G')[0].toUpperCase();
+      if(u.photoURL && /^https?:\/\//i.test(u.photoURL)){
+        avatar.innerHTML='';
+        const img=document.createElement('img');
+        img.src=u.photoURL;
+        img.style.cssText='width:100%;height:100%;border-radius:50%;object-fit:cover;';
+        img.onerror=()=>{ avatar.textContent=(u.displayName||'G')[0].toUpperCase(); };
+        avatar.appendChild(img);
+      }
+      else avatar.textContent=(u.displayName||'Guest')[0].toUpperCase();
       $('#profile-name').textContent=u.displayName||'Guest';
       $('#profile-level-display').textContent=`Level ${lv}`;
-      const equippedTitle=(s.equipped||{}).title;
+      const equippedTitle=(p.equipped||{}).title;
       const titleName=equippedTitle?MP.titles.getName(equippedTitle,currentLang):'';
       const titleEl=$('#profile-title-display');
       if(titleEl) titleEl.textContent=titleName;
       $('#profile-xp-text').textContent=`${inLevel} / ${needed} Stars`;
       $('#profile-xp-bar').style.width=pct+'%';
-      $('#profile-wins').textContent=s.wins||0;
-      $('#profile-losses').textContent=s.losses||0;
-      $('#profile-draws').textContent=s.draws||0;
-      $('#profile-games').textContent=s.gamesPlayed||0;
+      $('#profile-wins').textContent=p.wins||0;
+      $('#profile-losses').textContent=p.losses||0;
+      $('#profile-draws').textContent=p.draws||0;
+      $('#profile-games').textContent=p.gamesPlayed||0;
       $('#profile-winrate').textContent=winrate+'%';
     },
 
     _statsCache:null,
-    async _getStats(){
-      if(!MP.user||!MP.db) return {};
-      const sSnap=await MP.db.collection('userStats').doc(MP.user.uid).get();
-      this._statsCache=sSnap.exists?sSnap.data():{};
-      return this._statsCache;
+    _getStats(){
+      return MP.progression.load();
     },
 
     async showTitlesModal(){
@@ -3926,9 +4136,9 @@ const MP = {
     },
 
     async equipTitle(id){
-      if(!MP.user||!MP.db) return;
-      const ref=MP.db.collection('userStats').doc(MP.user.uid);
-      await ref.set({equipped:{title:id}},{merge:true});
+      const p=MP.progression.load();
+      p.equipped.title=id;
+      MP.progression.save();
       App.closeModal('titles');
       this.render();
     },
@@ -3994,10 +4204,9 @@ const MP = {
     },
 
     async equipCosmetic(category,id){
-      if(!MP.user||!MP.db) return;
-      const ref=MP.db.collection('userStats').doc(MP.user.uid);
-      const update={}; update[category]=id;
-      await ref.set({equipped:update},{merge:true});
+      const p=MP.progression.load();
+      p.equipped[category]=id;
+      MP.progression.save();
       MP.cosmetics.applyEquipped();
       App.closeModal('cosmetics');
       this.showCosmeticsModal(this._cosmeticsTab);
@@ -4059,6 +4268,8 @@ const MP = {
           this.user=u;
           if(this._creatingProfile) return;
           await this._ensureUserDoc(u);
+          // Merge local offline progression up to Firestore (and pull cloud down)
+          await MP.sync.mergeProgress().catch(()=>{});
           this._enterLobby();
         } else {
           App.showScreen('menu-screen');
@@ -4071,6 +4282,26 @@ const MP = {
     const ref=this.db.collection('users').doc(u.uid);
     const snap=await ref.get();
     if(!snap.exists){
+      // Profile recovery: check if we have a saved UID from a previous session
+      const savedUid=localStorage.getItem('mp_uid');
+      if(savedUid && savedUid!==u.uid){
+        const oldSnap=await this.db.collection('users').doc(savedUid).get().catch(()=>null);
+        if(oldSnap&&oldSnap.exists){
+          const oldData=oldSnap.data();
+          // Copy old profile data to new UID
+          await ref.set({...oldData, online:true, lastSeen:Date.now()});
+          this.user.displayName=oldData.displayName||'Guest';
+          this.user.photoURL=oldData.photoURL||'';
+          MP._friendProfileCache[u.uid]=oldData;
+          // Copy userStats too
+          const oldStats=await this.db.collection('userStats').doc(savedUid).get().catch(()=>null);
+          if(oldStats&&oldStats.exists){
+            await MP.db.collection('userStats').doc(u.uid).set(oldStats.data(),{merge:true}).catch(()=>{});
+          }
+          localStorage.setItem('mp_uid', u.uid);
+          return;
+        }
+      }
       await ref.set({
         displayName: u.displayName||'Guest',
         photoURL: u.photoURL||'',
@@ -4083,6 +4314,7 @@ const MP = {
       this.user.displayName=u.displayName||'Guest';
       this.user.photoURL=u.photoURL||'';
       MP._friendProfileCache[u.uid]={displayName:u.displayName||'Guest',photoURL:u.photoURL||'',elo:1200,friends:[],pendingRequests:[],online:true};
+      try{ localStorage.setItem('mp_uid', u.uid); }catch(e){}
       // Initialize progression stats
       MP.db.collection('userStats').doc(u.uid).set({
         totalStars:0, level:1, starsInLevel:0,
@@ -4096,6 +4328,8 @@ const MP = {
       this.user.displayName=snap.data().displayName||'Guest';
       this.user.photoURL=snap.data().photoURL||'';
       MP._friendProfileCache[u.uid]=snap.data();
+      // Save UID for profile recovery
+      try{ localStorage.setItem('mp_uid', u.uid); }catch(e){}
       // Backfill default cosmetics for existing users
       const uStats=await MP.db.collection('userStats').doc(u.uid).get().catch(()=>null);
       if(uStats&&uStats.exists){
@@ -4116,11 +4350,24 @@ const MP = {
     App.showScreen('lobby-screen');
     MP.i18n.applyAll();
     const u=this.user;
-    $('#mp-lobby-name').innerHTML=`${u.displayName||'Guest'} <span class="mp-online-dot" style="margin-left:6px;"></span>`;
-    if(u.photoURL){
-      $('#mp-avatar').innerHTML=`<img src="${u.photoURL}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+    const nameEl=$('#mp-lobby-name');
+    if(nameEl){
+      nameEl.textContent='';
+      nameEl.appendChild(document.createTextNode(u.displayName||'Guest'));
+      const dot=document.createElement('span');
+      dot.className='mp-online-dot';
+      dot.style.marginLeft='6px';
+      nameEl.appendChild(dot);
+    }
+    const avatarEl=$('#mp-avatar');
+    if(u.photoURL && /^https?:\/\//i.test(u.photoURL)){
+      avatarEl.innerHTML='';
+      const img=document.createElement('img');
+      img.src=u.photoURL; img.alt='';
+      img.style.cssText='width:100%;height:100%;border-radius:50%;object-fit:cover;';
+      avatarEl.appendChild(img);
     }else{
-      $('#mp-avatar').textContent=(u.displayName||'G')[0].toUpperCase();
+      avatarEl.textContent=(u.displayName||'G')[0].toUpperCase();
     }
     this._loadElo();
     MP.friends._listenFriends();
@@ -4143,11 +4390,10 @@ const MP = {
       const uSnap=await this.db.collection('users').doc(this.user.uid).get();
       elo=(uSnap.exists?uSnap.data().elo:1200)||1200;
     }
-    // Stats doc still needs a read (not cached elsewhere)
-    const sSnap=await this.db.collection('userStats').doc(this.user.uid).get();
-    const sData=sSnap.exists?sSnap.data():{};
-    const lv=sData.level||1;
-    const equippedTitle=(sData.equipped||{}).title;
+    // ELO stays Firebase-only (ranked); level/title come from local progression
+    const p=MP.progression.load();
+    const lv=p.level||1;
+    const equippedTitle=(p.equipped||{}).title;
     const titleName=equippedTitle?MP.titles.getName(equippedTitle,currentLang):'';
     $('#mp-lobby-elo').textContent=`Rating ${elo}`;
     const lvEl=$('#mp-lobby-level');
@@ -4209,7 +4455,11 @@ const MP = {
           unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']}},
           achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
         });
+        // Merge any local offline progression up immediately (source of truth is local)
+        await MP.sync.mergeProgress().catch(()=>{});
         MP._enterLobby();
+        // Save UID for profile recovery across APK updates
+        try{ localStorage.setItem('mp_uid', MP.user.uid); }catch(e){}
       }catch(e){
         console.error('Profile creation error:',e);
         alert('Failed to create profile: '+e.message);
@@ -4272,16 +4522,18 @@ const MP = {
             });
 
             if(match){
+              // Verify opponent is still waiting (prevents double-match race).
+              // Bail BEFORE cleanup/queue-delete so a stale match doesn't
+              // strand us on the search overlay with our queue entry removed.
+              const oppQueue=await MP.db.collection('matchmaking').doc(match.id).get().catch(()=>null);
+              if(!oppQueue||!oppQueue.exists||oppQueue.data().status!=='waiting'){
+                return; // Opponent already matched, keep waiting for another
+              }
+
               // Match found! Create game
               this._cleanup();
               // Delete own queue entry FIRST to prevent other player from matching us
               await qRef.delete().catch(()=>{});
-
-              // Verify opponent is still waiting (prevents double-match race)
-              const oppQueue=await MP.db.collection('matchmaking').doc(match.id).get().catch(()=>null);
-              if(!oppQueue||!oppQueue.exists||oppQueue.data().status!=='waiting'){
-                return; // Opponent already matched, bail out
-              }
 
               const oppSnap=await MP.db.collection('users').doc(match.id).get();
               const oppData=oppSnap.data()||{};
@@ -4532,10 +4784,10 @@ const MP = {
           if(!fd) continue;
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${fd.online?'online':'offline'}"></div>
-            <div class="mp-friend-name">${fd.displayName||'User'}</div>
-            <div class="mp-friend-elo">Rating ${fd.elo||1200}</div>
-            <button class="mp-friend-action" onclick="MP.friends.accept('${fid}')">Accept</button>
-            <button class="mp-friend-action decline" onclick="MP.friends.decline('${fid}')">Decline</button>
+            <div class="mp-friend-name">${esc(fd.displayName||'User')}</div>
+            <div class="mp-friend-elo">Rating ${esc(fd.elo||1200)}</div>
+            <button class="mp-friend-action" onclick="MP.friends.accept('${esc(fid)}')">Accept</button>
+            <button class="mp-friend-action decline" onclick="MP.friends.decline('${esc(fid)}')">Decline</button>
           </div>`;
         }
       }
@@ -4550,9 +4802,9 @@ const MP = {
           if(fd.online) onlineCount++;
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${fd.online?'online':'offline'}"></div>
-            <div class="mp-friend-name">${fd.displayName||'User'}</div>
-            <div class="mp-friend-elo">Rating ${fd.elo||1200}</div>
-            ${fd.online?`<button class="mp-friend-action challenge" onclick="MP.friends.challenge('${fid}','${fd.displayName||'User'}',${fd.elo||1200})">Challenge</button>`:''}
+            <div class="mp-friend-name">${esc(fd.displayName||'User')}</div>
+            <div class="mp-friend-elo">Rating ${esc(fd.elo||1200)}</div>
+            ${fd.online?`<button class="mp-friend-action challenge" onclick="MP.friends.challenge('${esc(fid)}')">Challenge</button>`:''}
           </div>`;
         }
         $('#mp-friends-count').textContent=`${onlineCount} online`;
@@ -4586,8 +4838,8 @@ const MP = {
           else btn=`<button class="mp-friend-action" onclick="MP.friends.add('${doc.id}')">Add</button>`;
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${d.online?'online':'offline'}"></div>
-            <div class="mp-friend-name">${d.displayName||'User'}</div>
-            <div class="mp-friend-elo">Rating ${d.elo||1200}</div>
+            <div class="mp-friend-name">${esc(d.displayName||'User')}</div>
+            <div class="mp-friend-elo">Rating ${esc(d.elo||1200)}</div>
             ${btn}
           </div>`;
         });
@@ -4647,8 +4899,11 @@ const MP = {
       this._renderFriends();
     },
 
-    async challenge(friendId, friendName, friendElo){
+    async challenge(friendId){
       if(!MP.user) return;
+      const fd=MP._friendProfileCache[friendId]||{};
+      const friendName=fd.displayName||'User';
+      const friendElo=fd.elo||1200;
       const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
       const myData=myDoc.data()||{};
 
@@ -4736,6 +4991,7 @@ const MP = {
       Game.aiWhite=null; Game.aiBlack=null;
       Game.viewSide = MP.myColor==='black' ? 2 : 1;
       this._lastSentVersion=0;
+      this._moveList=[];
       // Write initial board to Firestore
       MP.db.collection('games').doc(gameId).update({
         board: Array.from(Game.state.board),
@@ -4770,6 +5026,7 @@ const MP = {
           Game.state.halfmoveClock=d.halfmoveClock||0;
           Game.lastMove=d.lastMove||null;
           Game.state.history=d.history||[];
+          this._moveList=d.moves||Game.state.history;
           if(sz!==prevSize || !$('#board').querySelector('.square')){
             Renderer.init(sz);
           }
@@ -4807,8 +5064,8 @@ const MP = {
       bar.innerHTML=`
         <div class="mp-player-color ${oppSide.toLowerCase()}"></div>
         <div class="mp-player-detail">
-          <div class="mp-player-detail-name">${MP.opponent.name} <span class="mp-friend-status online" style="margin-left:6px;"></span></div>
-          <div class="mp-player-detail-elo">Rating ${MP.opponent.elo}</div>
+          <div class="mp-player-detail-name">${esc(MP.opponent.name||'Opponent')} <span class="mp-friend-status online" style="margin-left:6px;"></span></div>
+          <div class="mp-player-detail-elo">Rating ${esc(MP.opponent.elo||1200)}</div>
         </div>
         <div class="mp-game-actions">
           ${isFriend?'<span style="font-size:.7rem; opacity:.5;">Friends</span>':`<button class="mp-game-action-btn" onclick="MP.friends.addOpponent()" style="font-size:.7rem; padding:4px 8px;" data-i18n="game.addFriend">Add Friend</button>`}
@@ -4821,13 +5078,14 @@ const MP = {
     async sendMove(mv){
       if(!MP.currentGameId) return;
       const moveData={from:mv.from, to:mv.to, captures:mv.captures.map(c=>c), notation:Game.notation(mv)};
+      this._moveList=[...(this._moveList||[]), moveData];
       const gameRef=MP.db.collection('games').doc(MP.currentGameId);
       this._lastSentVersion=(this._lastSentVersion||0)+1;
       await gameRef.update({
         board: Array.from(Game.state.board),
         turn: Game.state.turn===COLOR.W?'white':'black',
-        moves: firebase.firestore.FieldValue.arrayUnion(moveData),
-        history: firebase.firestore.FieldValue.arrayUnion(moveData),
+        moves: this._moveList,
+        history: this._moveList,
         halfmoveClock: Game.state.halfmoveClock,
         lastMove: {from:mv.from, to:mv.to},
         boardSize: Game.state.size,
@@ -4882,21 +5140,14 @@ const MP = {
       else Audio.play('move');
 
       Stats.add(myResult, (d.history||[]).length, Game.seconds||0);
-      // Track stats + award stars for online games
-      if(MP.user && MP.db){
-        MP.rewards.processGame({result:myResult, drawType:'automatic', moveCount:(d.history||[]).length, gameStats:Game._gameMetrics||{}}).catch(()=>{});
-      }
+      // Online matches are Firebase-only (ELO/ranked above): no local stars/themes.
+      // Still award a hint locally on a win so online players keep hint income.
+      if(myResult==='win'){ const p=MP.progression.load(); p.hints=(p.hints||0)+1; MP.progression.save(); }
       $('#over-title').textContent=title; $('#over-msg').textContent=finalMsg;
       
       // Show rematch button only for online games with an opponent
       const rematchBtn=$('#btn-rematch');
-      if(MP.currentGameId && d.players && d.players.black && d.mode!=='room'){
-        rematchBtn.style.display='inline-block';
-      }else if(MP.currentGameId && d.players && d.players.black && d.mode==='room'){
-        rematchBtn.style.display='inline-block';
-      }else{
-        rematchBtn.style.display='none';
-      }
+      if(rematchBtn) rematchBtn.style.display=(MP.currentGameId && d.players && d.players.black)?'inline-block':'none';
       
       Chat.stopListening();
       App.showModal('over');
@@ -4916,9 +5167,8 @@ const MP = {
         if(gd.rematchGameId && gd.rematchRequestedBy && gd.rematchRequestedBy!==MP.user.uid){
           // Opponent requested rematch
           MP._pendingRematchGameId=gd.rematchGameId;
-          if(confirm((gd.rematchRequestedBy===d.players.white?(d.names?.white||'Player'):(d.names?.black||'Player'))+' wants a rematch! Accept?')){
-            MP._acceptRematch();
-          }
+          const who=gd.rematchRequestedBy===d.players.white?(d.names?.white||'Player'):(d.names?.black||'Player');
+          App.confirm(who+' wants a rematch! Accept?', ()=>MP._acceptRematch());
         }
       });
     },
@@ -5022,7 +5272,10 @@ const MP = {
 
     async resign(){
       if(!MP.currentGameId || !MP.user) return;
-      if(!confirm('Are you sure you want to resign?')) return;
+      App.confirm('Are you sure you want to resign?', ()=>this._doResign());
+    },
+    async _doResign(){
+      if(!MP.currentGameId || !MP.user) return;
       const ref=MP.db.collection('games').doc(MP.currentGameId);
       const snap=await ref.get();
       if(snap.exists && snap.data().status==='finished') return;
@@ -5229,9 +5482,9 @@ const MP = {
       if(remote && remote!==App.CURRENT_VERSION){
         App._pendingUpdate=remote;
         setTimeout(()=>{
-          if(confirm('Update available (v'+remote+'). Download now?')){
+          App.confirm('Update available (v'+remote+'). Download now?', ()=>{
             window.open(App.APK_URL,'_blank');
-          }
+          });
         },3000);
       }
     }catch(e){}
