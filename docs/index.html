@@ -4071,6 +4071,26 @@ const MP = {
     const ref=this.db.collection('users').doc(u.uid);
     const snap=await ref.get();
     if(!snap.exists){
+      // Profile recovery: check if we have a saved UID from a previous session
+      const savedUid=localStorage.getItem('mp_uid');
+      if(savedUid && savedUid!==u.uid){
+        const oldSnap=await this.db.collection('users').doc(savedUid).get().catch(()=>null);
+        if(oldSnap&&oldSnap.exists){
+          const oldData=oldSnap.data();
+          // Copy old profile data to new UID
+          await ref.set({...oldData, online:true, lastSeen:Date.now()});
+          this.user.displayName=oldData.displayName||'Guest';
+          this.user.photoURL=oldData.photoURL||'';
+          MP._friendProfileCache[u.uid]=oldData;
+          // Copy userStats too
+          const oldStats=await this.db.collection('userStats').doc(savedUid).get().catch(()=>null);
+          if(oldStats&&oldStats.exists){
+            await MP.db.collection('userStats').doc(u.uid).set(oldStats.data(),{merge:true}).catch(()=>{});
+          }
+          localStorage.setItem('mp_uid', u.uid);
+          return;
+        }
+      }
       await ref.set({
         displayName: u.displayName||'Guest',
         photoURL: u.photoURL||'',
@@ -4083,6 +4103,7 @@ const MP = {
       this.user.displayName=u.displayName||'Guest';
       this.user.photoURL=u.photoURL||'';
       MP._friendProfileCache[u.uid]={displayName:u.displayName||'Guest',photoURL:u.photoURL||'',elo:1200,friends:[],pendingRequests:[],online:true};
+      try{ localStorage.setItem('mp_uid', u.uid); }catch(e){}
       // Initialize progression stats
       MP.db.collection('userStats').doc(u.uid).set({
         totalStars:0, level:1, starsInLevel:0,
@@ -4096,6 +4117,8 @@ const MP = {
       this.user.displayName=snap.data().displayName||'Guest';
       this.user.photoURL=snap.data().photoURL||'';
       MP._friendProfileCache[u.uid]=snap.data();
+      // Save UID for profile recovery
+      try{ localStorage.setItem('mp_uid', u.uid); }catch(e){}
       // Backfill default cosmetics for existing users
       const uStats=await MP.db.collection('userStats').doc(u.uid).get().catch(()=>null);
       if(uStats&&uStats.exists){
@@ -4210,6 +4233,8 @@ const MP = {
           achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
         });
         MP._enterLobby();
+        // Save UID for profile recovery across APK updates
+        try{ localStorage.setItem('mp_uid', MP.user.uid); }catch(e){}
       }catch(e){
         console.error('Profile creation error:',e);
         alert('Failed to create profile: '+e.message);
