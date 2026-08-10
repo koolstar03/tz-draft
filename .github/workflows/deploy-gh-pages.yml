@@ -1,0 +1,38 @@
+name: Deploy web to GitHub Pages
+
+# Keeps https://koolstar03.github.io/tz-draft/ in sync with the repo.
+# Every push to master re-publishes the single-file web app to the gh-pages branch.
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stage site files
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          cp icon.png _site/icon.png
+          cp version.txt _site/version.txt
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true
