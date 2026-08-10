@@ -569,7 +569,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
       <button class="btn" onclick="App.startConfig('pvc')"><span class="btn-icon">&#129302;</span> <span data-i18n="menu.playAI">Cheza na Kompyuta</span></button>
       <button class="btn ghost" onclick="App.startConfig('hvh')"><span class="btn-icon">&#128107;</span> <span data-i18n="menu.human">Cheza na Rafiki</span></button>
       <button class="btn ghost" onclick="App.startConfig('ava')"><span class="btn-icon">&#9851;</span> <span data-i18n="menu.aivAI">AI vs AI</span></button>
-      <button class="btn ghost" onclick="MP.user ? App.showScreen('lobby-screen') : App.showScreen('login-screen')"><span class="btn-icon">&#127760;</span> <span data-i18n="menu.online">Online Matches</span></button>
+      <button class="btn ghost" onclick="MP.user ? MP.enterLobby() : App.showScreen('login-screen')"><span class="btn-icon">&#127760;</span> <span data-i18n="menu.online">Online Matches</span></button>
       <button class="btn ghost" onclick="App.startEndgame()"><span class="btn-icon">&#127922;</span> <span data-i18n="menu.endgame">Endgame Practice</span></button>
     </div>
     <div style="display:flex; gap:8px; margin-top:8px; max-width:340px; width:100%;">
@@ -946,7 +946,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
         <div class="mp-avatar" id="mp-avatar" style="width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:1.4rem; border:2px solid rgba(255,255,255,.15);"></div>
         <div style="text-align:left;">
           <div style="display:flex; align-items:center; gap:6px; font-weight:700; font-size:1.1rem;" id="mp-lobby-name">Guest</div>
-          <div style="opacity:.5; font-size:.8rem;" id="mp-lobby-level">Level 1 \u00b7 <span id="mp-lobby-elo">Rating 1200</span></div>
+          <div style="opacity:.5; font-size:.8rem;" id="mp-lobby-level"><span id="mp-lobby-level-text">Level 1</span> · <span id="mp-lobby-elo">Rating 1200</span></div>
         </div>
       </div>
     </div>
@@ -995,7 +995,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
     </div>
 
     <div style="display:flex; gap:10px; margin-top:16px;">
-      <button class="btn ghost" onclick="MP.room.cancel(); App.showScreen('lobby-screen')">Back</button>
+      <button class="btn ghost" onclick="MP.room.cancel(); MP.enterLobby()">Back</button>
     </div>
   </div>
 
@@ -1009,7 +1009,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
       <div id="mp-friend-requests" style="margin-bottom:8px;"></div>
       <div class="mp-friends-wrap" id="mp-friends-list"></div>
     </div>
-    <button class="btn ghost" onclick="App.showScreen('lobby-screen')" style="margin-top:12px;">Back</button>
+    <button class="btn ghost" onclick="MP.enterLobby()" style="margin-top:12px;">Back</button>
   </div>
 
   <!-- ==================== PROFILE SCREEN ==================== -->
@@ -1017,9 +1017,19 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
     <div style="width:min(400px,92vw); display:flex; flex-direction:column; align-items:center; gap:16px;">
       <div style="width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:2.2rem; border:3px solid rgba(255,255,255,.15);" id="profile-avatar"></div>
       <div style="text-align:center;">
-        <div style="font-size:1.4rem; font-weight:800;" id="profile-name">Guest</div>
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+          <div style="font-size:1.4rem; font-weight:800;" id="profile-name">Guest</div>
+          <button class="btn ghost" id="profile-rename-btn" style="padding:3px 9px; font-size:.7rem;" onclick="MP.profile.showRename()">&#9998; <span data-i18n="profile.rename">Rename</span></button>
+        </div>
         <div style="opacity:.5; font-size:.9rem;" id="profile-level-display">Level 1</div>
         <div style="opacity:.6; font-size:.8rem; color:#ffd700;" id="profile-title-display"></div>
+      </div>
+      <div id="profile-rename-wrap" style="display:none; width:100%; max-width:300px; flex-direction:column; gap:8px;">
+        <input class="mp-search-input" id="profile-rename-input" placeholder="Enter display name" maxlength="24" style="font-size:1rem; padding:12px;">
+        <div style="display:flex; gap:8px;">
+          <button class="btn" style="flex:1; padding:9px;" onclick="MP.profile.saveRename()"><span data-i18n="profile.save">Save</span></button>
+          <button class="btn ghost" style="flex:1; padding:9px;" onclick="MP.profile.cancelRename()"><span data-i18n="profile.cancel">Cancel</span></button>
+        </div>
       </div>
       <div style="width:100%; max-width:300px;">
         <div style="display:flex; justify-content:space-between; font-size:.8rem; opacity:.6; margin-bottom:4px;">
@@ -1058,7 +1068,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
         <button class="btn ghost" style="flex:1; padding:10px 8px; font-size:.8rem;" onclick="MP.profile.showAchievementsModal()">&#127941; <span data-i18n="progress.achievements">Achievements</span></button>
         <button class="btn ghost" style="flex:1; padding:10px 8px; font-size:.8rem;" onclick="MP.profile.showCosmeticsModal()">&#127912; <span data-i18n="progress.cosmetics">Cosmetics</span></button>
       </div>
-      <button class="btn ghost" onclick="App.showScreen('lobby-screen')"><span data-i18n="profile.back">Back</span></button>
+      <button class="btn ghost" onclick="MP.enterLobby()"><span data-i18n="profile.back">Back</span></button>
     </div>
   </div>
 
@@ -1225,6 +1235,10 @@ const LANG_DATA = {
     'profile.winRate': 'Win Rate',
     'profile.friendly': 'Friendly',
     'profile.back': 'Back',
+    'profile.rename': 'Rename',
+    'profile.save': 'Save',
+    'profile.cancel': 'Cancel',
+    'profile.updated': 'Profile updated',
     // Settings
     'settings.title': 'Settings',
     'settings.ui': 'Interface',
@@ -1389,6 +1403,10 @@ const LANG_DATA = {
     'profile.winRate': 'Asilimia ya Ushindi',
     'profile.friendly': 'Kirafiki',
     'profile.back': 'Rudi',
+    'profile.rename': 'Badilisha jina',
+    'profile.save': 'Hifadhi',
+    'profile.cancel': 'Ghairi',
+    'profile.updated': 'Wasifu umesasishwa',
     'settings.title': 'Mpangilio',
     'settings.ui': 'Muonekano',
     'settings.rules': 'Sheria',
@@ -3508,6 +3526,7 @@ const MP = {
   _unsubGame: null, _challengeData: null, _lastGameOverId: null,
   _friendSearchTimeout: null, _myFriends: [], _myPending: [], _unsubChallengeGame: null,
   _friendProfileCache: {},
+  _unsubOwnProfile: null,
 
   /* ---- i18n ---- */
   i18n:{
@@ -4076,6 +4095,8 @@ const MP = {
         const uSnap=await MP.db.collection('users').doc(MP.user.uid).get().catch(()=>null);
         if(uSnap&&uSnap.exists) u=uSnap.data();
       }
+      const renBtn=$('#profile-rename-btn');
+      if(renBtn) renBtn.style.display=(MP.user&&MP.db)?'':'none';
       const totalStars=p.totalStars||0;
       const lv=p.level||1;
       const needed=MP.stars.starsForLevel(lv);
@@ -4105,6 +4126,33 @@ const MP = {
       $('#profile-draws').textContent=p.draws||0;
       $('#profile-games').textContent=p.gamesPlayed||0;
       $('#profile-winrate').textContent=winrate+'%';
+    },
+
+    showRename(){
+      if(!MP.user) return;
+      $('#profile-rename-input').value=MP.user.displayName||'';
+      $('#profile-rename-wrap').style.display='flex';
+      setTimeout(()=>{ const el=$('#profile-rename-input'); if(el) el.focus(); },50);
+    },
+    cancelRename(){
+      $('#profile-rename-wrap').style.display='none';
+    },
+    async saveRename(){
+      const n=$('#profile-rename-input').value.trim();
+      if(!n) return;
+      if(!MP.user){ this.cancelRename(); return; }
+      try{
+        await MP.db.collection('users').doc(MP.user.uid).update({displayName:n});
+        MP.user.displayName=n;
+        MP._friendProfileCache[MP.user.uid]={...(MP._friendProfileCache[MP.user.uid]||{}),displayName:n};
+        this.cancelRename();
+        MP.profile.render();
+        if(MP._refreshLobbyHeader) MP._refreshLobbyHeader();
+        MP.notifications.push({text:t('profile.updated')||'Profile updated',bg:'rgba(76,175,80,.95)',dur:1500});
+      }catch(e){
+        console.error('Rename error:',e);
+        alert('Failed to update name: '+e.message);
+      }
     },
 
     _statsCache:null,
@@ -4281,16 +4329,25 @@ const MP = {
   async _ensureUserDoc(u){
     const ref=this.db.collection('users').doc(u.uid);
     const snap=await ref.get();
-    if(!snap.exists){
-      // Profile recovery: check if we have a saved UID from a previous session
-      const savedUid=localStorage.getItem('mp_uid');
+    const isGuestName=(d)=>{
+      const n=(d&&d.displayName)||'';
+      return !String(n).trim()||/^guest$/i.test(String(n).trim());
+    };
+    const savedUid=localStorage.getItem('mp_uid');
+    if(!snap.exists||isGuestName(snap.data())){
+      // Profile recovery: a missing or "Guest"-named doc is usually the result
+      // of the old v2.0 name race. Repair it from a saved previous UID if possible.
       if(savedUid && savedUid!==u.uid){
         const oldSnap=await this.db.collection('users').doc(savedUid).get().catch(()=>null);
-        if(oldSnap&&oldSnap.exists){
+        if(oldSnap&&oldSnap.exists&&!isGuestName(oldSnap.data())){
           const oldData=oldSnap.data();
-          // Copy old profile data to new UID
-          await ref.set({...oldData, online:true, lastSeen:Date.now()});
-          this.user.displayName=oldData.displayName||'Guest';
+          // Copy old profile data (name/elo) onto the new UID to repair Guest docs
+          if(snap.exists){
+            await ref.update({displayName:oldData.displayName,photoURL:oldData.photoURL||'',online:true,lastSeen:Date.now()}).catch(()=>{});
+          }else{
+            await ref.set({...oldData,online:true,lastSeen:Date.now()});
+          }
+          this.user.displayName=oldData.displayName;
           this.user.photoURL=oldData.photoURL||'';
           MP._friendProfileCache[u.uid]=oldData;
           // Copy userStats too
@@ -4302,27 +4359,35 @@ const MP = {
           return;
         }
       }
-      await ref.set({
-        displayName: u.displayName||'Guest',
-        photoURL: u.photoURL||'',
-        elo: 1200,
-        friends: [],
-        pendingRequests: [],
-        online: true,
-        lastSeen: Date.now()
-      });
-      this.user.displayName=u.displayName||'Guest';
-      this.user.photoURL=u.photoURL||'';
-      MP._friendProfileCache[u.uid]={displayName:u.displayName||'Guest',photoURL:u.photoURL||'',elo:1200,friends:[],pendingRequests:[],online:true};
-      try{ localStorage.setItem('mp_uid', u.uid); }catch(e){}
-      // Initialize progression stats
-      MP.db.collection('userStats').doc(u.uid).set({
-        totalStars:0, level:1, starsInLevel:0,
-        wins:0, losses:0, draws:0, gamesPlayed:0, hints:3,
-        equipped:{title:null,board:null,pieces:null,border:null,avatar:null},
-        unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']}},
-        achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
-      },{merge:true}).catch(()=>{});
+      if(!snap.exists){
+        await ref.set({
+          displayName: u.displayName||'Guest',
+          photoURL: u.photoURL||'',
+          elo: 1200,
+          friends: [],
+          pendingRequests: [],
+          online: true,
+          lastSeen: Date.now()
+        });
+        this.user.displayName=u.displayName||'Guest';
+        this.user.photoURL=u.photoURL||'';
+        MP._friendProfileCache[u.uid]={displayName:u.displayName||'Guest',photoURL:u.photoURL||'',elo:1200,friends:[],pendingRequests:[],online:true};
+        try{ localStorage.setItem('mp_uid', u.uid); }catch(e){}
+        // Initialize progression stats
+        MP.db.collection('userStats').doc(u.uid).set({
+          totalStars:0, level:1, starsInLevel:0,
+          wins:0, losses:0, draws:0, gamesPlayed:0, hints:3,
+          equipped:{title:null,board:null,pieces:null,border:null,avatar:null},
+          unlocked:{titles:['mfanunzi'],achievements:[],cosmetics:{boards:['wood'],pieces:['classic'],borders:['none'],avatars:['default']}},
+          achievementsMetrics:{totalPiecesLost:0,longestGameMoves:0,comebackWins:0,maxMovesWithoutLoss:0,opponentPiecesLost:0}
+        },{merge:true}).catch(()=>{});
+      }else{
+        // Existing doc whose name is "Guest" with no recoverable profile — keep as-is
+        this.user.displayName=snap.data().displayName||'Guest';
+        this.user.photoURL=snap.data().photoURL||'';
+        MP._friendProfileCache[u.uid]=snap.data();
+        try{ localStorage.setItem('mp_uid', u.uid); }catch(e){}
+      }
     }else{
       await ref.update({online:true, lastSeen:Date.now()});
       this.user.displayName=snap.data().displayName||'Guest';
@@ -4349,7 +4414,43 @@ const MP = {
   _enterLobby(){
     App.showScreen('lobby-screen');
     MP.i18n.applyAll();
+    MP._refreshLobbyHeader();
+    MP._listenOwnProfile();
+    MP.friends._listenFriends();
+    MP.cosmetics.applyEquipped();
+    if(!this._beforeunloadAdded){
+      window.addEventListener('beforeunload', ()=>{
+        if(this.user) this.db.collection('users').doc(this.user.uid).update({online:false,lastSeen:Date.now()}).catch(()=>{});
+      });
+      this._beforeunloadAdded=true;
+    }
+  },
+
+  enterLobby(){ this._enterLobby(); },
+
+  _listenOwnProfile(){
+    if(!this.user) return;
+    if(this._unsubOwnProfile) this._unsubOwnProfile();
+    const uid=this.user.uid;
+    this._unsubOwnProfile=this.db.collection('users').doc(uid).onSnapshot(()=>{
+      if(this.user&&this.user.uid===uid) MP._refreshLobbyHeader();
+    },()=>{});
+  },
+
+  async _refreshLobbyHeader(){
     const u=this.user;
+    if(!u) return;
+    let profile=null;
+    if(this.db){
+      const snap=await this.db.collection('users').doc(u.uid).get().catch(()=>null);
+      if(snap&&snap.exists) profile=snap.data();
+    }
+    if(profile){
+      // Always read the live doc so name/ELO reflect the latest Firestore state
+      u.displayName=profile.displayName||u.displayName||'Guest';
+      u.photoURL=profile.photoURL||'';
+      MP._friendProfileCache[u.uid]=profile;
+    }
     const nameEl=$('#mp-lobby-name');
     if(nameEl){
       nameEl.textContent='';
@@ -4369,35 +4470,20 @@ const MP = {
     }else{
       avatarEl.textContent=(u.displayName||'G')[0].toUpperCase();
     }
-    this._loadElo();
-    MP.friends._listenFriends();
-    MP.cosmetics.applyEquipped();
-    if(!this._beforeunloadAdded){
-      window.addEventListener('beforeunload', ()=>{
-        if(this.user) this.db.collection('users').doc(this.user.uid).update({online:false,lastSeen:Date.now()}).catch(()=>{});
-      });
-      this._beforeunloadAdded=true;
-    }
-  },
-
-  async _loadElo(){
-    if(!this.user) return;
-    // Get elo from user doc (already listened to by _listenFriends, use cached if available)
-    let elo=1200;
-    const cachedProfile=MP._friendProfileCache[this.user.uid];
-    if(cachedProfile) elo=cachedProfile.elo||1200;
-    else{
-      const uSnap=await this.db.collection('users').doc(this.user.uid).get();
-      elo=(uSnap.exists?uSnap.data().elo:1200)||1200;
-    }
+    const elo=profile?((profile.elo||1200)||1200):1200;
+    const eloEl=$('#mp-lobby-elo');
+    if(eloEl) eloEl.textContent=`Rating ${elo}`;
     // ELO stays Firebase-only (ranked); level/title come from local progression
     const p=MP.progression.load();
     const lv=p.level||1;
     const equippedTitle=(p.equipped||{}).title;
     const titleName=equippedTitle?MP.titles.getName(equippedTitle,currentLang):'';
-    $('#mp-lobby-elo').textContent=`Rating ${elo}`;
+    const lvTextEl=$('#mp-lobby-level-text');
     const lvEl=$('#mp-lobby-level');
-    if(lvEl) lvEl.innerHTML=`Level ${lv}${titleName?' \u00b7 '+titleName:''} \u00b7 <span id="mp-lobby-elo">Rating ${elo}</span>`;
+    if(lvEl){
+      if(lvTextEl) lvTextEl.textContent=`Level ${lv}${titleName?' \u00b7 '+titleName:''}`;
+      else lvEl.innerHTML=`Level ${lv}${titleName?' \u00b7 '+titleName:''}`;
+    }
   },
 
   /* ---- AUTH ---- */
@@ -4471,6 +4557,7 @@ const MP = {
       if(MP.user){
         await MP.db.collection('users').doc(MP.user.uid).update({online:false,lastSeen:Date.now()}).catch(()=>{});
       }
+      if(MP._unsubOwnProfile){ MP._unsubOwnProfile(); MP._unsubOwnProfile=null; }
       await firebase.auth().signOut();
       MP.user=null; MP.currentGameId=null; MP.myColor=null;
       App.showScreen('login-screen');
