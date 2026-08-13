@@ -21,3 +21,10 @@ Thumbs.db
 # Local properties
 local.properties
 tz-draft-release.keystore
+
+# Local-only test build (never shipped / never used for APKs)
+test.html
+make-test.ps1
+watch-test.ps1
+test-build-watch.log
+start-test-watch.vbs

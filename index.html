@@ -788,10 +788,26 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
     <div class="modal-panel glass" style="text-align:center;">
       <div class="modal-title" id="over-title" data-i18n="over.victory">Victory!</div>
       <p id="over-msg" style="opacity:.8;" data-i18n="over.msg">You won by capturing all enemy pieces.</p>
+      <div id="rematch-status" style="display:none; margin-bottom:10px; font-size:.9rem; opacity:.9;"></div>
       <div class="modal-footer" style="justify-content:center; flex-wrap:wrap;">
         <button id="btn-rematch" class="btn" onclick="MP.game.rematch()" style="display:none;" data-i18n="over.rematch">Rematch</button>
-        <button class="btn" onclick="App.closeModal('over'); App.showScreen('config-screen')" data-i18n="over.newGame">New Game</button>
-        <button class="btn ghost" onclick="App.closeModal('over'); App.showScreen('menu-screen')" data-i18n="over.mainMenu">Main Menu</button>
+        <button id="btn-rematch-accept" class="btn" onclick="MP.game.acceptRematch()" style="display:none;" data-i18n="over.accept">Accept</button>
+        <button id="btn-rematch-decline" class="btn ghost" onclick="MP.game.declineRematch()" style="display:none;" data-i18n="over.decline">Decline</button>
+        <button class="btn" onclick="MP.game.leaveAfterGame(false)" data-i18n="over.newGame">New Game</button>
+        <button class="btn ghost" onclick="MP.game.leaveAfterGame(true)" data-i18n="over.mainMenu">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-club-profile">
+    <div class="modal-panel glass" style="text-align:center;">
+      <div class="modal-title" id="club-profile-name">Player</div>
+      <div style="opacity:.6; font-size:.9rem;" id="club-profile-meta"></div>
+      <div style="opacity:.5; font-size:.8rem; margin-top:4px;" id="club-profile-stats"></div>
+      <div class="modal-footer" style="justify-content:center; flex-wrap:wrap;">
+        <button class="btn" id="club-profile-challenge" data-i18n="club.requestMatch">Request Match</button>
+        <button class="btn ghost" id="club-profile-addfriend" data-i18n="friends.add">Add Friend</button>
+        <button class="btn ghost" onclick="App.closeModal('club-profile')" data-i18n="settings.close">Close</button>
       </div>
     </div>
   </div>
@@ -953,6 +969,7 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
     <div class="menu-grid">
       <button class="btn" onclick="MP.matchmaking.startRandom()"><span class="btn-icon">&#127760;</span> <span data-i18n="lobby.random">Cheza Online</span></button>
       <button class="btn ghost" onclick="MP.friends.show()"><span class="btn-icon">&#128101;</span> <span data-i18n="lobby.friends">Marafiki</span> <span id="mp-friends-count" style="opacity:.5; font-size:.8rem; margin-left:auto;"></span></button>
+      <button class="btn ghost" onclick="MP.club.show()"><span class="btn-icon">&#128107;</span> <span data-i18n="lobby.club">Club</span></button>
       <button class="btn ghost" onclick="MP.room.showPlayWithFriend()"><span class="btn-icon">&#128279;</span> <span data-i18n="lobby.create">Cheza na Rafiki</span></button>
       <button class="btn ghost" onclick="App.showScreen('menu-screen')"><span class="btn-icon">&#127918;</span> <span data-i18n="lobby.offline">Cheza Offline</span></button>
     </div>
@@ -977,9 +994,11 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
 
     <!-- Create room section -->
     <div id="mp-room-create-area" style="width:100%; max-width:360px; padding:0 16px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; gap:12px;">
+      <div style="font-size:.75rem; opacity:.5; text-transform:uppercase; letter-spacing:.05em;" data-i18n="room.yourCode">Your Room Code</div>
       <div class="mp-room-code glass" id="mp-room-code" style="padding:20px 30px; display:none;">------</div>
-      <div id="mp-room-waiting" style="display:none; text-align:center; opacity:.6; font-size:.9rem;">Waiting for opponent to join...</div>
-      <button class="btn" id="mp-room-create-btn" onclick="MP.room.showCreate()" style="width:100%;">Create Room & Share Code</button>
+      <button class="btn ghost" onclick="MP.room.copyCode()" style="font-size:.8rem; padding:6px 16px;">&#128203; <span data-i18n="room.copy">Copy</span></button>
+      <div id="mp-room-waiting" style="display:none; text-align:center; opacity:.6; font-size:.9rem;" data-i18n="room.waiting">Waiting for opponent to join...</div>
+      <button class="btn" id="mp-room-create-btn" onclick="MP.room.showCreate()" style="width:100%;" data-i18n="room.create">Create Room & Share Code</button>
     </div>
 
     <div style="width:100%; max-width:360px; padding:0 16px; box-sizing:border-box; margin-top:16px;">
@@ -1010,6 +1029,16 @@ select, input[type="range"]{ padding:8px; border-radius:8px; border:1px solid rg
       <div class="mp-friends-wrap" id="mp-friends-list"></div>
     </div>
     <button class="btn ghost" onclick="MP.enterLobby()" style="margin-top:12px;">Back</button>
+  </div>
+
+  <!-- ==================== CLUB SCREEN (online players) ==================== -->
+  <div id="club-screen" class="screen">
+    <div class="mp-title" data-i18n="club.title">Club</div>
+    <div style="width:100%; max-width:420px; padding:0 16px; box-sizing:border-box;">
+      <div id="mp-club-count" style="font-size:.8rem; opacity:.5; margin-bottom:8px;"></div>
+      <div class="mp-friends-wrap" id="mp-club-list"></div>
+    </div>
+    <button class="btn ghost" onclick="MP.club.close()" style="margin-top:12px;">Back</button>
   </div>
 
   <!-- ==================== PROFILE SCREEN ==================== -->
@@ -1179,7 +1208,29 @@ const LANG_DATA = {
     'over.newGame': 'New Game',
     'over.mainMenu': 'Main Menu',
     'over.rematch': 'Rematch',
+    'over.accept': 'Accept',
+    'over.decline': 'Decline',
+    'over.rematchWaiting': 'Waiting for %s to accept the rematch...',
+    'over.rematchInvite': '%s wants a rematch!',
     'over.msg': 'You won by capturing all enemy pieces.',
+    // Room codes
+    'room.yourCode': 'Your Room Code',
+    'room.copy': 'Copy',
+    'room.create': 'Create Room & Share Code',
+    'room.waiting': 'Waiting for opponent to join...',
+    'room.offline': 'Player is not online right now.',
+    'room.noRoom': 'That player has no open room. Ask them to create one.',
+    'room.notFound': 'Room not found. Check the code and try again.',
+    // Club
+    'lobby.club': 'Club',
+    'club.title': 'Club',
+    'club.online': '%s online',
+    'club.empty': 'No players online right now.',
+    'club.free': 'Free',
+    'club.inMatch': 'In a match',
+    'club.profile': 'Profile',
+    'club.requestMatch': 'Request Match',
+    'club.offline': 'Offline',
     // Login
     'login.title': 'Tanzanian Draft',
     'login.subtitle': 'Play online with friends',
@@ -1354,7 +1405,29 @@ const LANG_DATA = {
     'over.newGame': 'Mchezo Mpya',
     'over.mainMenu': 'Menyu Kuu',
     'over.rematch': 'Tena',
+    'over.accept': 'Kubali',
+    'over.decline': 'Kataa',
+    'over.rematchWaiting': 'Inasubiri %s kukubali mchezo tena...',
+    'over.rematchInvite': '%s anataka mchezo tena!',
     'over.msg': 'Umeshinda kwa kukamata vipande vyote vya adui.',
+    // Room codes
+    'room.yourCode': 'Msimbo Wako wa Chumba',
+    'room.copy': 'Nakili',
+    'room.create': 'Fungua Chumba na Tumia Msimbo',
+    'room.waiting': 'Inasubiri mpinzani ajiunge...',
+    'room.offline': 'Mchezaji hayupo mtandaoni sasa hivi.',
+    'room.noRoom': 'Mchezaji huyo hana chumba wazi. Muombe afungue moja.',
+    'room.notFound': 'Chumba hakikupatikana. Angalia msimbo na ujaribu tena.',
+    // Club
+    'lobby.club': 'Klabu',
+    'club.title': 'Klabu',
+    'club.online': '%s mtandaoni',
+    'club.empty': 'Hakuna wachezaji mtandaoni sasa hivi.',
+    'club.free': 'Yupo tayari',
+    'club.inMatch': 'Anacheza mchezo',
+    'club.profile': 'Wasifu',
+    'club.requestMatch': 'Omba Mchezo',
+    'club.offline': 'Hayupo mtandaoni',
     'login.title': 'Draft ya Tanzania',
     'login.subtitle': 'Cheza online na marafiki',
     'login.google': 'Ingia na Google',
@@ -3527,6 +3600,7 @@ const MP = {
   _friendSearchTimeout: null, _myFriends: [], _myPending: [], _unsubChallengeGame: null,
   _friendProfileCache: {},
   _unsubOwnProfile: null,
+  _myRoomCode: null, _myWaitingGameId: null, _unsubRematch: null, _pendingRematchGameId: null,
 
   /* ---- i18n ---- */
   i18n:{
@@ -4418,6 +4492,8 @@ const MP = {
     MP._listenOwnProfile();
     MP.friends._listenFriends();
     MP.cosmetics.applyEquipped();
+    if(MP.room._ensureMyCode) MP.room._ensureMyCode();
+    if(MP.club && MP.club._unsub) MP.club.stop();
     if(!this._beforeunloadAdded){
       window.addEventListener('beforeunload', ()=>{
         if(this.user) this.db.collection('users').doc(this.user.uid).update({online:false,lastSeen:Date.now()}).catch(()=>{});
@@ -4528,6 +4604,8 @@ const MP = {
           draws:0,
           gamesPlayed:0,
           online:true,
+          inMatch:false,
+          roomCode: await MP.room._makeRoomCode(),
           lastSeen:Date.now(),
           createdAt:Date.now()
         };
@@ -4555,9 +4633,10 @@ const MP = {
     },
     async signOut(){
       if(MP.user){
-        await MP.db.collection('users').doc(MP.user.uid).update({online:false,lastSeen:Date.now()}).catch(()=>{});
+        await MP.db.collection('users').doc(MP.user.uid).update({online:false,inMatch:false,lastSeen:Date.now()}).catch(()=>{});
       }
       if(MP._unsubOwnProfile){ MP._unsubOwnProfile(); MP._unsubOwnProfile=null; }
+      if(MP.club && MP.club._unsub) MP.club.stop();
       await firebase.auth().signOut();
       MP.user=null; MP.currentGameId=null; MP.myColor=null;
       App.showScreen('login-screen');
@@ -4686,14 +4765,44 @@ const MP = {
   room:{
     _waiting: null,
 
-    showPlayWithFriend(){
+    async _makeRoomCode(){
+      for(let t=0;t<12;t++){
+        const code=String(Math.floor(100000+Math.random()*900000));
+        const snap=await MP.db.collection('users').where('roomCode','==',code).limit(1).get();
+        if(snap.empty) return code;
+      }
+      return String(Date.now()).slice(-6);
+    },
+
+    async _ensureMyCode(){
+      if(!MP.user) return null;
+      if(MP._myRoomCode) return MP._myRoomCode;
+      const ref=MP.db.collection('users').doc(MP.user.uid);
+      const snap=await ref.get();
+      const d=snap.exists?snap.data():{};
+      let code=d.roomCode;
+      if(!code){
+        code=await this._makeRoomCode();
+        await ref.set({roomCode:code},{merge:true}).catch(()=>{});
+      }
+      MP._myRoomCode=code;
+      return code;
+    },
+
+    async showPlayWithFriend(){
       App.showScreen('room-screen');
       $('#mp-room-title').textContent='Cheza na Rafiki';
       $('#mp-room-subtitle').textContent='Create a room or join with a code';
-      $('#mp-room-code').style.display='none';
       $('#mp-room-waiting').style.display='none';
       $('#mp-room-create-btn').style.display='';
       $('#mp-room-join-area').style.display='flex';
+      const code=await this._ensureMyCode();
+      const el=$('#mp-room-code');
+      if(el){
+        if(code){ el.textContent=code; el.style.display='block'; }
+        else el.style.display='none';
+      }
+      MP.i18n.applyAll();
     },
 
     showCreate(){
@@ -4703,12 +4812,23 @@ const MP = {
     },
 
     async _createRoom(){
-      const code=String(Math.floor(100000+Math.random()*900000));
-      $('#mp-room-code').textContent=code;
-      $('#mp-room-code').style.display='block';
+      if(!MP.user) return;
+      const code=await this._ensureMyCode();
+      if(!code) return;
+      const codeEl=$('#mp-room-code');
+      if(codeEl){ codeEl.textContent=code; codeEl.style.display='block'; }
       $('#mp-room-waiting').style.display='block';
 
-      if(!MP.user) return;
+      // Cancel any stale waiting rooms of mine so the code always points to the open one
+      try{
+        const olds=await MP.db.collection('games').where('players.white','==',MP.user.uid).limit(20).get();
+        olds.forEach(doc=>{
+          if(doc.id!==MP._myWaitingGameId && doc.data().status==='waiting'){
+            MP.db.collection('games').doc(doc.id).update({status:'cancelled'}).catch(()=>{});
+          }
+        });
+      }catch(e){}
+
       const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
       const myData=myDoc.data()||{};
 
@@ -4723,18 +4843,32 @@ const MP = {
         version: 0
       });
 
+      MP._myWaitingGameId=gRef.id;
       MP.currentGameId=gRef.id;
       MP.myColor='white';
 
       // Listen for opponent join
+      if(this._waiting){ this._waiting(); this._waiting=null; }
       this._waiting=MP.db.collection('games').doc(gRef.id).onSnapshot(snap=>{
         const d=snap.data();
         if(d && d.status==='playing' && d.players.black){
           MP.opponent={uid:d.players.black, name:d.names.black, elo:d.elo.black};
           this._cleanup();
+          MP._myWaitingGameId=null;
           MP.game.startOnline(gRef.id);
         }
       });
+    },
+
+    async copyCode(){
+      const code=await this._ensureMyCode();
+      if(!code) return;
+      try{
+        await navigator.clipboard.writeText(code);
+        alert(t('room.yourCode')+': '+code);
+      }catch(e){
+        prompt(t('room.yourCode')+':', code);
+      }
     },
 
     async join(){
@@ -4746,24 +4880,37 @@ const MP = {
       if(!MP.user) return;
 
       try{
-        const snap=await MP.db.collection('games')
-          .where('roomCode','==',code).limit(5).get();
+        // Fixed codes belong to a player, so find the host by their code
+        const usnap=await MP.db.collection('users').where('roomCode','==',code).limit(1).get();
+        if(usnap.empty){
+          alert(t('room.notFound'));
+          return;
+        }
+        const hostUid=usnap.docs[0].id;
+        const hostData=usnap.docs[0].data()||{};
+        if(!hostData.online){
+          alert((hostData.displayName||'Player')+' — '+t('room.offline'));
+          return;
+        }
+        if(hostData.inMatch){
+          alert((hostData.displayName||'Player')+' '+t('club.inMatch').toLowerCase()+'.');
+          return;
+        }
 
+        // Find the host's open waiting room
+        const gsnap=await MP.db.collection('games')
+          .where('players.white','==',hostUid).limit(20).get();
         let gDoc=null;
-        snap.forEach(doc=>{
+        gsnap.forEach(doc=>{
           const d=doc.data();
           if(d.status==='waiting' && !gDoc) gDoc=doc;
         });
-
         if(!gDoc){
-          alert('Room not found. Check the code and try again.');
+          alert(t('room.noRoom'));
           return;
         }
         const gData=gDoc.data();
-        if(gData.status!=='waiting'){
-          alert('This room is already full or no longer available.');
-          return;
-        }
+
         const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
         const myData=myDoc.data()||{};
 
@@ -4803,6 +4950,7 @@ const MP = {
         MP.db.collection('games').doc(MP.currentGameId)
           .update({status:'cancelled'}).catch(()=>{});
       }
+      MP._myWaitingGameId=null;
     },
 
     _cleanup(){
@@ -4853,9 +5001,9 @@ const MP = {
       const friends=data.friends||[];
       const pending=data.pendingRequests||[];
 
-      // Batch-fetch only uncached profiles (1 read for all missing, not N reads)
+      // Refresh all friend profiles on every render so online/in-match status stays live
       const allIds=[...new Set([...friends,...pending])];
-      const toFetch=allIds.filter(id=>!MP._friendProfileCache[id]);
+      const toFetch=allIds;
       if(toFetch.length){
         const fetches=await Promise.all(toFetch.map(id=>MP.db.collection('users').doc(id).get()));
         fetches.forEach(snap=>{ if(snap.exists) MP._friendProfileCache[snap.id]=snap.data(); });
@@ -4887,11 +5035,12 @@ const MP = {
           const fd=MP._friendProfileCache[fid];
           if(!fd) continue;
           if(fd.online) onlineCount++;
+          const statusTxt=fd.online?(fd.inMatch?t('club.inMatch'):t('club.free')):'';
           html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px;">
             <div class="mp-friend-status ${fd.online?'online':'offline'}"></div>
             <div class="mp-friend-name">${esc(fd.displayName||'User')}</div>
-            <div class="mp-friend-elo">Rating ${esc(fd.elo||1200)}</div>
-            ${fd.online?`<button class="mp-friend-action challenge" onclick="MP.friends.challenge('${esc(fid)}')">Challenge</button>`:''}
+            <div class="mp-friend-elo">Rating ${esc(fd.elo||1200)}${statusTxt?' · '+statusTxt:''}</div>
+            ${(fd.online&&!fd.inMatch)?`<button class="mp-friend-action challenge" onclick="MP.friends.challenge('${esc(fid)}')">Challenge</button>`:''}
           </div>`;
         }
         $('#mp-friends-count').textContent=`${onlineCount} online`;
@@ -4988,7 +5137,11 @@ const MP = {
 
     async challenge(friendId){
       if(!MP.user) return;
-      const fd=MP._friendProfileCache[friendId]||{};
+      // Fresh status check (online + free) before sending a challenge
+      const fdSnap=await MP.db.collection('users').doc(friendId).get().catch(()=>null);
+      const fd=(fdSnap&&fdSnap.exists)?fdSnap.data():MP._friendProfileCache[friendId]||{};
+      if(!fd.online){ alert((fd.displayName||'That player')+' — '+t('club.offline')+'.'); return; }
+      if(fd.inMatch){ alert((fd.displayName||'That player')+' '+t('club.inMatch').toLowerCase()+'.'); return; }
       const friendName=fd.displayName||'User';
       const friendElo=fd.elo||1200;
       const myDoc=await MP.db.collection('users').doc(MP.user.uid).get();
@@ -5066,14 +5219,127 @@ const MP = {
     }
   },
 
+  /* ---- CLUB (online players) ---- */
+  club:{
+    _unsub: null,
+    _list: [],
+
+    show(){
+      App.showScreen('club-screen');
+      MP.i18n.applyAll();
+      this._listen();
+    },
+
+    close(){
+      this.stop();
+      MP.enterLobby();
+    },
+
+    stop(){
+      if(this._unsub){ this._unsub(); this._unsub=null; }
+      this._list=[];
+    },
+
+    _listen(){
+      if(!MP.user) return;
+      if(this._unsub) this._unsub();
+      this._unsub=MP.db.collection('users').where('online','==',true).onSnapshot(snap=>{
+        const items=[];
+        snap.forEach(doc=>{
+          if(doc.id===MP.user.uid) return;
+          const d=doc.data()||{};
+          items.push({uid:doc.id, name:d.displayName||'User', elo:d.elo||1200, country:d.country||'', inMatch:!!d.inMatch});
+        });
+        items.sort((a,b)=>b.elo-a.elo);
+        MP.club._list=items;
+        MP.club._render();
+      }, err=>{});
+    },
+
+    _render(){
+      const el=$('#mp-club-list');
+      if(!el) return;
+      const items=this._list;
+      const countEl=$('#mp-club-count');
+      if(countEl) countEl.textContent=t('club.online').replace('%s', items.length);
+      if(!items.length){
+        el.innerHTML=`<div style="opacity:.4; text-align:center; padding:20px;">${t('club.empty')}</div>`;
+        return;
+      }
+      let html='';
+      for(const p of items){
+        const flag=MP.club._flag(p.country);
+        const statusTxt=p.inMatch?t('club.inMatch'):t('club.free');
+        html+=`<div class="mp-friend-item glass" style="border-radius:10px; margin-bottom:6px; cursor:pointer;" onclick="MP.club.view('${esc(p.uid)}')">
+          <div class="mp-friend-status online"></div>
+          <div class="mp-friend-name">${flag} ${esc(p.name)}</div>
+          <div class="mp-friend-elo">Rating ${p.elo} &middot; ${statusTxt}</div>
+        </div>`;
+      }
+      el.innerHTML=html;
+    },
+
+    _flag(code){
+      if(!code || code.length!==2) return '';
+      try{ return String.fromCodePoint(0x1F1E6+code.charCodeAt(0)-65, 0x1F1E6+code.charCodeAt(1)-65); }
+      catch(e){ return ''; }
+    },
+
+    async view(uid){
+      const snap=await MP.db.collection('users').doc(uid).get().catch(()=>null);
+      if(!snap || !snap.exists){ alert('Player not found.'); return; }
+      const d=snap.data()||{};
+      const isFriend=(MP._myFriends||[]).includes(uid);
+      const isPending=(MP._myPending||[]).includes(uid);
+      const stats=this._list.find(p=>p.uid===uid);
+      const flag=MP.club._flag(d.country||'');
+      const statusTxt=d.online?(d.inMatch?t('club.inMatch'):t('club.free')):t('club.offline');
+
+      $('#club-profile-name').textContent=flag+' '+(d.displayName||'User');
+      $('#club-profile-meta').textContent=`Rating ${d.elo||1200} · ${statusTxt}`;
+      $('#club-profile-stats').textContent=`${d.wins||0}W · ${d.losses||0}L · ${d.draws||0}D · ${d.gamesPlayed||0} games`;
+
+      const chBtn=$('#club-profile-challenge');
+      if(chBtn){
+        chBtn.onclick=null;
+        chBtn.disabled=false;
+        if(!d.online){ chBtn.disabled=true; chBtn.textContent=t('club.offline'); }
+        else if(d.inMatch){ chBtn.disabled=true; chBtn.textContent=t('club.inMatch'); }
+        else{
+          chBtn.textContent=t('club.requestMatch');
+          chBtn.onclick=()=>{ App.closeModal('club-profile'); MP.friends.challenge(uid); };
+        }
+      }
+      const af=$('#club-profile-addfriend');
+      if(af){
+        af.onclick=null;
+        af.disabled=false;
+        if(isFriend){ af.disabled=true; af.textContent='Friends'; }
+        else if(isPending){ af.disabled=true; af.textContent='Sent'; }
+        else{
+          af.textContent='Add Friend';
+          af.onclick=()=>{ App.closeModal('club-profile'); MP.friends.add(uid); };
+        }
+      }
+      App.showModal('club-profile');
+    }
+  },
+
   /* ---- GAME SYNC ---- */
   game:{
     _unsub: null,
     _lastSentVersion: 0,
 
+    async _setInMatch(v){
+      if(!MP.user || !MP.db) return;
+      MP.db.collection('users').doc(MP.user.uid).update({inMatch:!!v, lastSeen:Date.now()}).catch(()=>{});
+    },
+
     startOnline(gameId){
       MP.currentGameId=gameId;
       MP._lastGameOverId=null;
+      this._setInMatch(true);
+      App.closeModal('over');
       Game.newGame({mode:'online', difficulty:'medium', boardSize:8, firstMove:'human'});
       Game.aiWhite=null; Game.aiBlack=null;
       Game.viewSide = MP.myColor==='black' ? 2 : 1;
@@ -5199,6 +5465,8 @@ const MP = {
 
     async _onGameOver(d){
       if(MP._unsubGame){ MP._unsubGame(); MP._unsubGame=null; }
+      // Mark self as no longer in a match
+      MP.game._setInMatch(false);
       // Guard against double-fire from snapshot
       if(MP._lastGameOverId===MP.currentGameId) return;
       MP._lastGameOverId=MP.currentGameId;
@@ -5247,47 +5515,97 @@ const MP = {
       if(!d.players) return;
       const otherUid = MP.myColor==='white' ? d.players.black : d.players.white;
       if(!otherUid) return;
+      if(MP._unsubRematch) MP._unsubRematch();
       // Listen for rematchGameId on the finished game doc
       MP._unsubRematch=MP.db.collection('games').doc(MP.currentGameId).onSnapshot(snap=>{
         if(!snap.exists) return;
         const gd=snap.data();
         if(gd.rematchGameId && gd.rematchRequestedBy && gd.rematchRequestedBy!==MP.user.uid){
-          // Opponent requested rematch
+          // Opponent requested a rematch — show inline Accept / Decline
           MP._pendingRematchGameId=gd.rematchGameId;
           const who=gd.rematchRequestedBy===d.players.white?(d.names?.white||'Player'):(d.names?.black||'Player');
-          App.confirm(who+' wants a rematch! Accept?', ()=>MP._acceptRematch());
+          const st=$('#rematch-status');
+          if(st){ st.style.display='block'; st.textContent=t('over.rematchInvite').replace('%s', who); }
+          const rb=$('#btn-rematch'); if(rb) rb.style.display='none';
+          const ab=$('#btn-rematch-accept'); if(ab) ab.style.display='inline-block';
+          const db=$('#btn-rematch-decline'); if(db) db.style.display='inline-block';
+        }else if(gd.rematchGameId && gd.rematchRequestedBy===MP.user.uid){
+          // I already asked — keep showing the waiting state
+          MP.game._showRematchWaiting();
         }
       });
     },
 
-    async _acceptRematch(){
+    _showRematchWaiting(){
+      const st=$('#rematch-status');
+      if(st){ st.style.display='block'; st.textContent=t('over.rematchWaiting').replace('%s', MP.opponent?.name||'Opponent'); }
+      const rb=$('#btn-rematch'); if(rb) rb.style.display='none';
+      const ab=$('#btn-rematch-accept'); if(ab) ab.style.display='none';
+      const db=$('#btn-rematch-decline'); if(db) db.style.display='none';
+    },
+
+    _resetRematchUI(){
+      const st=$('#rematch-status'); if(st) st.style.display='none';
+      const rb=$('#btn-rematch'); if(rb) rb.style.display='inline-block';
+      const ab=$('#btn-rematch-accept'); if(ab) ab.style.display='none';
+      const db=$('#btn-rematch-decline'); if(db) db.style.display='none';
+    },
+
+    async acceptRematch(){
       if(!MP._pendingRematchGameId || !MP.user) return;
       const gameId=MP._pendingRematchGameId;
       MP._pendingRematchGameId=null;
       if(MP._unsubRematch){ MP._unsubRematch(); MP._unsubRematch=null; }
-      
+
       // Get the new game to determine our color
-      const gDoc=await MP.db.collection('games').doc(gameId).get();
-      const gData=gDoc.data();
-      if(!gData || !gData.players) return;
-      
+      const gDoc=await MP.db.collection('games').doc(gameId).get().catch(()=>null);
+      const gData=gDoc&&gDoc.exists?gDoc.data():null;
+      if(!gData || !gData.players || !gData.players.black || !gData.players.white){
+        MP._resetRematchUI();
+        return;
+      }
+
       const whiteUid=gData.players.white;
       const blackUid=gData.players.black;
       const whiteName=gData.names?.white||'Player 1';
       const blackName=gData.names?.black||'Player 2';
       const whiteElo=gData.elo?.white||1200;
       const blackElo=gData.elo?.black||1200;
-      
+
       MP.myColor=whiteUid===MP.user.uid?'white':'black';
       MP.opponent={uid:MP.myColor==='white'?blackUid:whiteUid, name:MP.myColor==='white'?blackName:whiteName, elo:MP.myColor==='white'?blackElo:whiteElo};
-      
+
       await MP.db.collection('games').doc(gameId).update({
         status:'playing',
         lastUpdatedBy: MP.user.uid
       });
-      
+
       App.closeModal('over');
       MP.game.startOnline(gameId);
+    },
+
+    async declineRematch(){
+      const gameId=MP._pendingRematchGameId;
+      MP._pendingRematchGameId=null;
+      if(MP._unsubRematch){ MP._unsubRematch(); MP._unsubRematch=null; }
+      if(gameId) MP.db.collection('games').doc(gameId).update({status:'declined'}).catch(()=>{});
+      MP._resetRematchUI();
+    },
+
+    _listenRematchGame(gameId){
+      if(MP._unsubChallengeGame) MP._unsubChallengeGame();
+      MP._unsubChallengeGame=MP.db.collection('games').doc(gameId).onSnapshot(snap=>{
+        const gd=snap.data();
+        if(!gd) return;
+        if(gd.status==='playing'){
+          if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
+          MP.game.startOnline(gameId);
+        }else if(gd.status==='declined'||gd.status==='cancelled'||gd.status==='finished'){
+          if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
+          MP._pendingRematchGameId=null;
+          MP._resetRematchUI();
+        }
+      });
     },
 
     _calcElo(a,b,w){
@@ -5299,62 +5617,71 @@ const MP = {
 
     async rematch(){
       if(!MP.currentGameId || !MP.user) return;
-      
+
       // Get current game data
       const gameDoc=await MP.db.collection('games').doc(MP.currentGameId).get();
       const gameData=gameDoc.data();
       if(!gameData || !gameData.players) return;
-      
+      const otherUid=MP.myColor==='white'?gameData.players.black:gameData.players.white;
+      if(!otherUid) return;
+
+      // Opponent already asked for a rematch → accept theirs instead of creating a new one
+      if(gameData.rematchGameId && gameData.rematchRequestedBy && gameData.rematchRequestedBy===otherUid){
+        MP._pendingRematchGameId=gameData.rematchGameId;
+        await this.acceptRematch();
+        return;
+      }
+      // I already asked → just keep waiting
+      if(gameData.rematchGameId && gameData.rematchRequestedBy===MP.user.uid){
+        this._showRematchWaiting();
+        return;
+      }
+
       const whiteUid=gameData.players.white;
       const blackUid=gameData.players.black;
       const whiteName=gameData.names?.white||'Player 1';
       const blackName=gameData.names?.black||'Player 2';
       const whiteElo=gameData.elo?.white||1200;
       const blackElo=gameData.elo?.black||1200;
-      
+
       // Swap colors for rematch
-      const newWhiteUid=blackUid;
-      const newBlackUid=whiteUid;
-      const newWhiteName=blackName;
-      const newBlackName=whiteName;
-      const newWhiteElo=blackElo;
-      const newBlackElo=whiteElo;
-      
-      // Create new game
       const gRef=await MP.db.collection('games').add({
-        players:{white:newWhiteUid, black:newBlackUid},
-        names:{white:newWhiteName, black:newBlackName},
-        elo:{white:newWhiteElo, black:newBlackElo},
+        players:{white:blackUid, black:whiteUid},
+        names:{white:blackName, black:whiteName},
+        elo:{white:blackElo, black:whiteElo},
         board:null, turn:'white', status:'waiting',
         moves:[], history:[], createdAt:Date.now(), mode:'rematch',
         roomCode:gameData.roomCode||null,
         lastUpdatedBy: MP.user.uid, version: 0
       });
-      
+
+      MP._pendingRematchGameId=gRef.id;
+
       // Notify other player via current game document
       await MP.db.collection('games').doc(MP.currentGameId).update({
         rematchGameId: gRef.id,
         rematchRequestedBy: MP.user.uid
       });
-      
-      // Set user's new color
+
+      // Set user's new color (swapped) and show a clear waiting state
       MP.myColor=whiteUid===MP.user.uid?'black':'white';
       MP.opponent={uid:MP.myColor==='white'?blackUid:whiteUid, name:MP.myColor==='white'?blackName:whiteName, elo:MP.myColor==='white'?blackElo:whiteElo};
-      
-      // Close modal
-      App.closeModal('over');
+      this._showRematchWaiting();
 
-      // Wait for opponent to accept (same pattern as challenge())
-      if(MP._unsubChallengeGame) MP._unsubChallengeGame();
-      MP._unsubChallengeGame=MP.db.collection('games').doc(gRef.id).onSnapshot(snap=>{
-        const gd=snap.data();
-        if(gd && gd.status==='playing'){
-          if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
-          MP.game.startOnline(gRef.id);
-        }else if(gd && (gd.status==='finished'||gd.status==='cancelled'||gd.status==='declined')){
-          if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
-        }
-      });
+      // Wait for opponent to accept
+      this._listenRematchGame(gRef.id);
+    },
+
+    async leaveAfterGame(goMenu){
+      if(MP.currentGameId && MP.user){
+        MP.db.collection('users').doc(MP.user.uid).update({inMatch:false,lastSeen:Date.now()}).catch(()=>{});
+      }
+      if(MP._unsubRematch){ MP._unsubRematch(); MP._unsubRematch=null; }
+      if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
+      MP._pendingRematchGameId=null;
+      MP.currentGameId=null; MP.myColor=null; MP.opponent=null;
+      App.closeModal('over');
+      App.showScreen(goMenu?'menu-screen':'config-screen');
     },
 
     async resign(){
@@ -5394,6 +5721,7 @@ const MP = {
       if(MP._unsubRematch){ MP._unsubRematch(); MP._unsubRematch=null; }
       if(MP._unsubChallengeGame){ MP._unsubChallengeGame(); MP._unsubChallengeGame=null; }
       if(MP.friends._unsubFriends){ MP.friends._unsubFriends(); MP.friends._unsubFriends=null; }
+      if(MP.club && MP.club._unsub) MP.club.stop();
       MP.currentGameId=null; MP.myColor=null; MP.opponent=null;
     }
   }
