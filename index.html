@@ -1055,7 +1055,7 @@ input[type="range"]::-moz-range-thumb{ width:20px; height:20px; border-radius:50
       <div style="width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:2.2rem; border:3px solid rgba(255,255,255,.15);" id="profile-avatar"></div>
       <div style="text-align:center;">
         <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-          <div style="font-size:1.4rem; font-weight:800;" id="profile-name">Guest</div>
+          <div style="font-size:1.4rem; font-weight:800;" id="profile-display-name">Guest</div>
           <button class="btn ghost" id="profile-rename-btn" style="padding:3px 9px; font-size:.7rem;" onclick="MP.profile.showRename()">&#9998; <span data-i18n="profile.rename">Rename</span></button>
         </div>
         <div style="opacity:.5; font-size:.9rem;" id="profile-level-display">Level 1</div>
@@ -4198,7 +4198,7 @@ const MP = {
         avatar.appendChild(img);
       }
       else avatar.textContent=(u.displayName||'Guest')[0].toUpperCase();
-      $('#profile-name').textContent=u.displayName||'Guest';
+      $('#profile-display-name').textContent=u.displayName||'Guest';
       $('#profile-level-display').textContent=`Level ${lv}`;
       const equippedTitle=(p.equipped||{}).title;
       const titleName=equippedTitle?MP.titles.getName(equippedTitle,currentLang):'';
